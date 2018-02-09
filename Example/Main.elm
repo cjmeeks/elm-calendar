@@ -1,8 +1,8 @@
 module Main exposing (..)
 
+import Calendar
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Calendar
 
 
 main : Program Never Model Msg
@@ -16,12 +16,13 @@ main =
 
 
 type alias Model =
-    Int
+    { testHtml : Html Msg
+    }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( 1, Cmd.none )
+    ( Model (div [] [ text "test" ]), Cmd.none )
 
 
 type Msg
@@ -37,4 +38,7 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    Calendar.view
+    div []
+        [ Calendar.view
+        , model.testHtml
+        ]

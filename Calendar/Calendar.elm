@@ -9,8 +9,24 @@ module Calendar exposing (view)
 
 -}
 
+import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
+
+
+type alias Model =
+    { content : Dict.Dict Int (Dict.Dict Int DayContent)
+    }
+
+
+type Msg
+    = CustomMsg
+
+
+type alias DayContent =
+    { index : Int
+    , content : Html Msg
+    }
 
 
 {-| Displays the Calendar
