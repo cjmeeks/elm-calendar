@@ -11,7 +11,7 @@ main =
         { init = init
         , update = update
         , view = view
-        , subscriptions = Sub.none
+        , subscriptions = \_ -> Sub.none
         }
 
 
@@ -21,7 +21,7 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    1
+    ( 1, Cmd.none )
 
 
 type Msg
@@ -35,6 +35,6 @@ update msg model =
             ( model, Cmd.none )
 
 
-view : Html Msg
-view =
-    h1 [] [ text ]
+view : Model -> Html Msg
+view model =
+    Calendar.view
