@@ -1,6 +1,7 @@
 module Main exposing (..)
 
-import Calendar
+import Calendar exposing (DayContent, Model, initCalendarModel, view)
+import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
@@ -16,13 +17,13 @@ main =
 
 
 type alias Model =
-    { testHtml : Html Msg
+    { calendarModel : Calendar.Model Msg
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model (div [] [ text "test" ]), Cmd.none )
+    ( Model (initCalendarModel (text "default")), Cmd.none )
 
 
 type Msg
@@ -38,7 +39,4 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ Calendar.view
-        , model.testHtml
-        ]
+    Calendar.view model.calendarModel

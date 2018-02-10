@@ -1,4 +1,4 @@
-module Calendar exposing (view)
+module Calendar exposing (DayContent, Model, initCalendarModel, view)
 
 {-| This library is for a drag and drop calendar
 
@@ -7,6 +7,17 @@ module Calendar exposing (view)
 
 @docs view
 
+
+# model
+
+@docs Model
+@docs DayContent
+
+
+# functions
+
+@docs initCalendarModel
+
 -}
 
 import Dict
@@ -14,8 +25,14 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 
 
-type alias Model =
-    { content : Dict.Dict Int (Dict.Dict Int DayContent)
+{-|
+
+    The model
+    pass in msg type of your html
+
+-}
+type alias Model a =
+    { content : Dict.Dict Int (Dict.Dict Int (DayContent a))
     }
 
 
@@ -23,10 +40,108 @@ type Msg
     = CustomMsg
 
 
-type alias DayContent =
+{-|
+
+    The daycontent
+    pass in msg type of your html
+
+-}
+type alias DayContent a =
     { index : Int
-    , content : Html Msg
+    , content : Html a
     }
+
+
+{-|
+
+    The daycontent
+    pass in msg type of your html
+
+-}
+initCalendarModel : Html a -> Model a
+initCalendarModel defaultHtml =
+    let
+        one =
+            1
+
+        two =
+            2
+
+        three =
+            3
+
+        four =
+            4
+
+        five =
+            5
+
+        six =
+            6
+
+        seven =
+            7
+
+        dict =
+            Dict.fromList
+                [ ( one
+                  , Dict.fromList
+                        [ ( one, DayContent one (div [] [ defaultHtml ]) )
+                        , ( two, DayContent two (div [] [ defaultHtml ]) )
+                        , ( three, DayContent three (div [] [ defaultHtml ]) )
+                        , ( four, DayContent four (div [] [ defaultHtml ]) )
+                        , ( five, DayContent five (div [] [ defaultHtml ]) )
+                        , ( six, DayContent six (div [] [ defaultHtml ]) )
+                        , ( seven, DayContent seven (div [] [ defaultHtml ]) )
+                        ]
+                  )
+                , ( 2
+                  , Dict.fromList
+                        [ ( one, DayContent one (div [] [ defaultHtml ]) )
+                        , ( two, DayContent two (div [] [ defaultHtml ]) )
+                        , ( three, DayContent three (div [] [ defaultHtml ]) )
+                        , ( four, DayContent four (div [] [ defaultHtml ]) )
+                        , ( five, DayContent five (div [] [ defaultHtml ]) )
+                        , ( six, DayContent six (div [] [ defaultHtml ]) )
+                        , ( seven, DayContent seven (div [] [ defaultHtml ]) )
+                        ]
+                  )
+                , ( 3
+                  , Dict.fromList
+                        [ ( one, DayContent one (div [] [ defaultHtml ]) )
+                        , ( two, DayContent two (div [] [ defaultHtml ]) )
+                        , ( three, DayContent three (div [] [ defaultHtml ]) )
+                        , ( four, DayContent four (div [] [ defaultHtml ]) )
+                        , ( five, DayContent five (div [] [ defaultHtml ]) )
+                        , ( six, DayContent six (div [] [ defaultHtml ]) )
+                        , ( seven, DayContent seven (div [] [ defaultHtml ]) )
+                        ]
+                  )
+                , ( 4
+                  , Dict.fromList
+                        [ ( one, DayContent one (div [] [ defaultHtml ]) )
+                        , ( two, DayContent two (div [] [ defaultHtml ]) )
+                        , ( three, DayContent three (div [] [ defaultHtml ]) )
+                        , ( four, DayContent four (div [] [ defaultHtml ]) )
+                        , ( five, DayContent five (div [] [ defaultHtml ]) )
+                        , ( six, DayContent six (div [] [ defaultHtml ]) )
+                        , ( seven, DayContent seven (div [] [ defaultHtml ]) )
+                        ]
+                  )
+                , ( 5
+                  , Dict.fromList
+                        [ ( one, DayContent one (div [] [ defaultHtml ]) )
+                        , ( two, DayContent two (div [] [ defaultHtml ]) )
+                        , ( three, DayContent three (div [] [ defaultHtml ]) )
+                        , ( four, DayContent four (div [] [ defaultHtml ]) )
+                        , ( five, DayContent five (div [] [ defaultHtml ]) )
+                        , ( six, DayContent six (div [] [ defaultHtml ]) )
+                        , ( seven, DayContent seven (div [] [ defaultHtml ]) )
+                        ]
+                  )
+                ]
+    in
+    Model dict
 
 
 {-| Displays the Calendar
@@ -34,45 +149,47 @@ type alias DayContent =
     Calendar.view
 
 -}
-view : Html msg
-view =
-    div [ calendarGrid ]
-        [ div [ gridAccess 1 1, gridItem ] [ text "1" ]
-        , div [ gridAccess 1 2, gridItem ] [ text "2" ]
-        , div [ gridAccess 1 3, gridItem ] [ text "3" ]
-        , div [ gridAccess 1 4, gridItem ] [ text "4" ]
-        , div [ gridAccess 1 5, gridItem ] [ text "5" ]
-        , div [ gridAccess 1 6, gridItem ] [ text "6" ]
-        , div [ gridAccess 1 7, gridItem ] [ text "7" ]
-        , div [ gridAccess 2 1, gridItem ] [ text "1" ]
-        , div [ gridAccess 2 2, gridItem ] [ text "2" ]
-        , div [ gridAccess 2 3, gridItem ] [ text "3" ]
-        , div [ gridAccess 2 4, gridItem ] [ text "4" ]
-        , div [ gridAccess 2 5, gridItem ] [ text "5" ]
-        , div [ gridAccess 2 6, gridItem ] [ text "6" ]
-        , div [ gridAccess 2 7, gridItem ] [ text "7" ]
-        , div [ gridAccess 3 1, gridItem ] [ text "1" ]
-        , div [ gridAccess 3 2, gridItem ] [ text "2" ]
-        , div [ gridAccess 3 3, gridItem ] [ text "3" ]
-        , div [ gridAccess 3 4, gridItem ] [ text "4" ]
-        , div [ gridAccess 3 5, gridItem ] [ text "5" ]
-        , div [ gridAccess 3 6, gridItem ] [ text "6" ]
-        , div [ gridAccess 3 7, gridItem ] [ text "7" ]
-        , div [ gridAccess 4 1, gridItem ] [ text "1" ]
-        , div [ gridAccess 4 2, gridItem ] [ text "2" ]
-        , div [ gridAccess 4 3, gridItem ] [ text "3" ]
-        , div [ gridAccess 4 4, gridItem ] [ text "4" ]
-        , div [ gridAccess 4 5, gridItem ] [ text "5" ]
-        , div [ gridAccess 4 6, gridItem ] [ text "6" ]
-        , div [ gridAccess 4 7, gridItem ] [ text "7" ]
-        , div [ gridAccess 5 1, gridItem ] [ text "1" ]
-        , div [ gridAccess 5 2, gridItem ] [ text "2" ]
-        , div [ gridAccess 5 3, gridItem ] [ text "3" ]
-        , div [ gridAccess 5 4, gridItem ] [ text "4" ]
-        , div [ gridAccess 5 5, gridItem ] [ text "5" ]
-        , div [ gridAccess 5 6, gridItem ] [ text "6" ]
-        , div [ gridAccess 5 7, gridItem ] [ text "7" ]
-        ]
+view : Model msg -> Html msg
+view model =
+    let
+        row1 =
+            getRow 1 model.content
+
+        row2 =
+            getRow 2 model.content
+
+        row3 =
+            getRow 3 model.content
+
+        row4 =
+            getRow 4 model.content
+
+        row5 =
+            getRow 5 model.content
+    in
+    div [ calendarGrid ] <|
+        List.concat
+            [ viewRow 1 row1
+            , viewRow 2 row2
+            , viewRow 3 row3
+            , viewRow 4 row4
+            , viewRow 5 row5
+            ]
+
+
+getRow : Int -> Dict.Dict Int (Dict.Dict Int (DayContent a)) -> List ( Int, DayContent a )
+getRow row dict =
+    case Dict.get row dict of
+        Just theRow ->
+            Dict.toList theRow
+
+        Nothing ->
+            []
+
+
+viewRow : Int -> List ( Int, DayContent a ) -> List (Html a)
+viewRow rowIndex row =
+    List.map (\( col, day ) -> div [ gridAccess rowIndex day.index, gridItem ] [ day.content ]) row
 
 
 
