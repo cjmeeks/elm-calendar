@@ -1,6 +1,6 @@
 module Main exposing (..)
 
-import Calendar exposing (DayContent, Model, initCalendarModel, view, update, CalendarMsg)
+import Calendar exposing (CalendarMsg, DayContent, Model, initCalendarModel, update, view)
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -24,10 +24,10 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init =
     let
-        ( cModel , cCmd) = (initCalendarModel (text "default")) 
+        ( cModel, cCmd ) =
+            initCalendarModel (text "default")
     in
-        
-    ( Model cModel , Cmd.map CMsg cCmd )
+    ( Model cModel, Cmd.map CMsg cCmd )
 
 
 type Msg
@@ -39,9 +39,11 @@ update msg model =
     case msg of
         CMsg cMsg ->
             let
-                (updatedModel, cCmd) = Calendar.update cMsg model.calendarModel
+                ( updatedModel, cCmd ) =
+                    Calendar.update cMsg model.calendarModel
             in
-                ({model | calendarModel = updatedModel}, Cmd.map CMsg cCmd )
+            ( { model | calendarModel = updatedModel }, Cmd.map CMsg cCmd )
+
 
 view : Model -> Html Msg
 view model =
