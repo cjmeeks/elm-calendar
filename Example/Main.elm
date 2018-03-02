@@ -1,9 +1,10 @@
 module Main exposing (..)
 
-import Calendar exposing (CalendarMsg, DayContent, Model, initCalendarModel, update, view)
+import Calendar exposing (CalendarMsg, DayContent, Model, initCalendarModel, update, view, dateToString)
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Time.Date as Date exposing (..)
 
 
 main : Program Never Model Msg
@@ -48,3 +49,10 @@ update msg model =
 view : Model -> Html Msg
 view model =
     Html.map CMsg <| Calendar.view model.calendarModel
+
+
+testCase : List (String, DayContent)
+testCase =
+    [ (dateToString (Date.date 2018 1 1) , DayContent 0 0 (div [] [text "hello"]) (Just <| Date.date 2018 1 1))
+    , (dateToString (Date.date 2018 1 20) , DayContent 0 0 (div [] [text "hello2"]) ( Just <| Date.date 2018 1 20))
+    ]
