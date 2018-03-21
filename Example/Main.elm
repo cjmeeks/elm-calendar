@@ -28,7 +28,7 @@ init =
         ( cModel, cCmd ) =
             initCalendarModel (text "default")
     in
-    ( Model cModel, Cmd.map CMsg cCmd )
+        ( Model cModel, Cmd.map CMsg cCmd )
 
 
 type Msg
@@ -43,7 +43,7 @@ update msg model =
                 ( updatedModel, cCmd ) =
                     Calendar.update cMsg model.calendarModel
             in
-            ( { model | calendarModel = updatedModel }, Cmd.map CMsg cCmd )
+                ( { model | calendarModel = updatedModel }, Cmd.map CMsg cCmd )
 
 
 view : Model -> Html Msg
@@ -51,8 +51,8 @@ view model =
     Html.map CMsg <| Calendar.view model.calendarModel
 
 
-testCase : List (String, DayContent)
+testCase : List ( String, DayContent )
 testCase =
-    [ (dateToString (Date.date 2018 1 1) , DayContent 0 0 (div [] [text "hello"]) (Just <| Date.date 2018 1 1))
-    , (dateToString (Date.date 2018 1 20) , DayContent 0 0 (div [] [text "hello2"]) ( Just <| Date.date 2018 1 20))
+    [ ( dateToString (Date.date 2018 1 1), DayContent 0 0 (div [] [ text "hello" ]) (Date.date 2018 1 1) )
+    , ( dateToString (Date.date 2018 1 20), DayContent 0 0 (div [] [ text "hello2" ]) (Date.date 2018 1 20) )
     ]

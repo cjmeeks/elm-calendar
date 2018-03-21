@@ -38,17 +38,18 @@ import Html.Attributes exposing (..)
 import Task exposing (..)
 import Time.Date as TDate exposing (..)
 import Set
+import List.Extra
 
 
 {-|
 
     The model
     pass in msg type of your html
-
+    content is a dictionary of key: (Year, Month) to Value : Internal Month
 -}
 type alias Model =
     { content : Dict.Dict String DayContent
-    , newContent : Dict.Dict Int InternalMonth
+    , newContent : Dict.Dict (Int, Int) InternalMonth
     , currentDate : Maybe TDate.Date
     }
 
@@ -63,7 +64,6 @@ type CalendarMsg
 
     The daycontent
     pass in msg type of your html
-
 -}
 type alias DayContent =
     { dayIndex : Int
@@ -76,7 +76,7 @@ type alias DayContent =
 type alias InternalMonth =
     { month : Int
     , year : Int
-    , days : Dict.Dict (Int, Int, Int) DayContent
+    , days : Dict.Dict ( Int, Int, Int ) DayContent
     }
 
 
@@ -84,51 +84,67 @@ type alias InternalMonth =
 
     The daycontent
     pass in msg type of your html
-
 -}
 initCalendarModel : Html CalendarMsg -> ( Model, Cmd CalendarMsg )
 initCalendarModel defaultHtml =
-        ( Model Dict.empty Dict.empty Nothing, Date.now |> Task.perform RecieveDate )
+    ( Model Dict.empty Dict.empty Nothing, Date.now |> Task.perform RecieveDate )
+
 
 
 {-
-    initial function to get the daterange
+   initial function to get the daterange
 -}
+
+
 initWithDayContent : List DayContent -> Model
 initWithDayContent list =
     let
-        (min, max) = getMinAndMaxDate <| List.map .theDate list
+        ( min, max ) =
+            getMinAndMaxDate <| List.map .theDate list
 
-        dates = datesInRange min max
+        dates =
+            datesInRange min max
 
-        datesList = List.map initDayContentFromDate dates
+        datesList =
+            List.map initDayContentFromDate dates
 
         mymap dateRange myList acc =
-            case (dateRange, myList) of
-                (d :: dli, m :: mli) -> 
+            case ( dateRange, myList ) of
+                ( d :: dli, m :: mli ) ->
                     let
-                        dDate = TDate.toTuple d.theDate
-                        mDate = TDate.toTuple m.theDate
+                        dDate =
+                            TDate.toTuple d.theDate
+
+                        mDate =
+                            TDate.toTuple m.theDate
                     in
                         if dDate == mDate then
                             mymap dli mli <| List.append acc [ m ]
                         else
                             mymap dli myList <| List.append acc [ d ]
-                        
-                ([], m :: mli) -> mymap [] mli <| List.append acc [ m ]
-                (d :: dli ,[]) -> mymap dli [] <| List.append acc [ d ]
-                ([],[]) -> mymap dateRange myList acc
-                    
-        combined = mymap datesList list []
 
-        temp = Debug.log "list" combined
+                ( [], m :: mli ) ->
+                    mymap [] mli <| List.append acc [ m ]
+
+                ( d :: dli, [] ) ->
+                    mymap dli [] <| List.append acc [ d ]
+
+                ( [], [] ) ->
+                    mymap dateRange myList acc
+
+        combined =
+            mymap datesList list []
+
+        temp =
+            Debug.log "list" combined
     in
         Model Dict.empty Dict.empty Nothing
 
-        
 
 initDayContentFromDate : Date -> DayContent
-initDayContentFromDate d = DayContent 0 0 (text "") d
+initDayContentFromDate d =
+    DayContent 0 0 (text "") d
+
 
 {-| Displays the Calendar
 
@@ -144,16 +160,19 @@ view model =
         -- indexed =
         --     getMonthGridFromDates dates
     in
-    div [ calendarGrid ] <|
-        -- List.append
+        div [ calendarGrid ] <|
+            -- List.append
             [ div
                 [ gridAccessSpanCol 1 7 1 ]
                 [ h1 [ calendarHeader ]
                     [ text "CALENDAR!!" ]
                 ]
             ]
-        -- <|
-            -- viewMonthFromList indexed
+
+
+
+-- <|
+-- viewMonthFromList indexed
 
 
 viewMonthFromList : List ( ( Int, Int ), Date ) -> List (Html CalendarMsg)
@@ -172,8 +191,10 @@ update msg model =
         RecieveDate rDate ->
             ( { model | currentDate = Just (date (Date.year rDate) (getMonthInt (Date.month rDate)) (Date.day rDate)) }, Cmd.none )
 
+
 {-|
-    converts a date to a string 
+
+    converts a date to a string
 -}
 dateToString :
     Date
@@ -182,28 +203,42 @@ dateToString date =
     String.join " " [ toString <| TDate.month date, toString <| TDate.day date, toString <| TDate.year date ]
 
 
-getMinAndMaxDate : List Date -> (Date, Date)
+getMinAndMaxDate : List Date -> ( Date, Date )
 getMinAndMaxDate dates =
     let
-        newDates = List.map toTuple dates
-        maxDate = if List.length newDates >= 2 then
-                    case List.maximum newDates of
-                        Just (y, m, d) -> date y m d
-                        Nothing -> date 2018 12 31
-                else
-                    date 2018 12 31
+        newDates =
+            List.map toTuple dates
 
-        minDate = if List.length newDates >= 2 then
-                    case List.minimum newDates of
-                        Just (y, m, d) -> date y m d
-                        Nothing -> date 2018 1 1
-                else
-                    date 2018 1 1
- 
-        minMonthDate = date (year minDate) (month minDate) 1
-        maxMonthDate = date (year maxDate) (month maxDate) (daysInMonth (year maxDate) (month maxDate))
+        maxDate =
+            if List.length newDates >= 2 then
+                case List.maximum newDates of
+                    Just ( y, m, d ) ->
+                        date y m d
+
+                    Nothing ->
+                        date 2018 12 31
+            else
+                date 2018 12 31
+
+        minDate =
+            if List.length newDates >= 2 then
+                case List.minimum newDates of
+                    Just ( y, m, d ) ->
+                        date y m d
+
+                    Nothing ->
+                        date 2018 1 1
+            else
+                date 2018 1 1
+
+        minMonthDate =
+            date (year minDate) (month minDate) 1
+
+        maxMonthDate =
+            date (year maxDate) (month maxDate) (daysInMonth (year maxDate) (month maxDate))
     in
-        (minMonthDate, maxMonthDate)
+        ( minMonthDate, maxMonthDate )
+
 
 
 {- STYLES
@@ -262,55 +297,74 @@ calendarHeader =
 
 
 
-
-
 -- Date Stuff
+
+
 listOfMonthInts : List Int
-listOfMonthInts = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+listOfMonthInts =
+    [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ]
+
+
 
 --TODO make this do dict int (internal month)
+-- setters
+
 groupDayContentByMonth : List DayContent -> List InternalMonth
-groupDayContentByMonth content = 
+groupDayContentByMonth content =
     let
-        groupByYear stuff acc =
-            case stuff of
-                s : sli -> 
-                    
-            
-                [] -> acc
-                    
-        List.map (\x ->
-            (x, Dict.fromList <| List.map (\z -> (TDate.toTuple z.theDate, z) ) <| List.filter (\y -> TDate.month y.theDate == x ) content)
-        ) listOfMonthInts
-        
+        sortedByYear =
+            List.Extra.groupWhile (\x y -> TDate.year x.theDate == TDate.year y.theDate) content
+
+        sortedByMonth =
+            List.map (\x -> List.Extra.groupWhile (\y z -> TDate.month y.theDate == TDate.month z.theDate) x) sortedByYear
+
+        toInternalMonthList = List.map (\x -> List.map listToInternalMonth x)  sortedByMonth
     in
-        
-        
+        List.concat toInternalMonthList
+
+
+listToInternalMonth : List DayContent -> InternalMonth
+listToInternalMonth content =
+    let
+        contentDict =
+            Dict.fromList <| List.map (\x -> ( (TDate.toTuple x.theDate), x )) content
+    in
+        case List.head content of
+            Just item ->
+                (InternalMonth (TDate.year item.theDate) (TDate.month item.theDate) contentDict)
+
+            Nothing ->
+                InternalMonth 2000 1 Dict.empty
+
+
 
 --List Date -> ((x,y), Date) map that
 -- Recurcive function
--- gets a list of daycontent which will generally be given as a month at a time and updates their day and week indexes for the grid 
+-- gets a list of daycontent which will generally be given as a month at a time and updates their day and week indexes for the grid
 -- make this take in internal month
-getMonthGridFromDates : List DayContent -> List DayContent 
+
+
+getMonthGridFromDates : List DayContent -> List DayContent
 getMonthGridFromDates dates =
     let
         getGridXY list row acc =
             case list of
                 d :: li ->
                     let
-                        xPos = dayToGridxPosition (TDate.weekday d.theDate)
+                        xPos =
+                            dayToGridxPosition (TDate.weekday d.theDate)
                     in
-                    if xPos == 99 then
-                        getGridXY li row acc
-                    else if xPos == 7 then
-                        getGridXY li (row + 1) (List.append acc [ { d | dayIndex = xPos, weekIndex = row} ])
-                    else
-                        getGridXY li row (List.append acc [ { d | dayIndex = xPos, weekIndex = row }])
+                        if xPos == 99 then
+                            getGridXY li row acc
+                        else if xPos == 7 then
+                            getGridXY li (row + 1) (List.append acc [ { d | dayIndex = xPos, weekIndex = row } ])
+                        else
+                            getGridXY li row (List.append acc [ { d | dayIndex = xPos, weekIndex = row } ])
 
                 [] ->
                     acc
     in
-    getGridXY dates 2 []
+        getGridXY dates 2 []
 
 
 dayToGridxPosition : Weekday -> Int
@@ -360,12 +414,12 @@ datesInRange min max =
                 y =
                     subDay x
             in
-            if toTuple y == toTuple min then
-                y :: acc
-            else
-                go y (y :: acc)
+                if toTuple y == toTuple min then
+                    y :: acc
+                else
+                    go y (y :: acc)
     in
-    go (addDay max) []
+        go (addDay max) []
 
 
 {-| A function that takes a Date and returns the date representing the first of that month.
@@ -394,7 +448,7 @@ endOfMonth dateIn =
                 Nothing ->
                     0
     in
-    date y m d
+        date y m d
 
 
 {-| A function that subtracts 1 day from the given date and returns it.
@@ -428,10 +482,10 @@ subDay dateIn =
                 Nothing ->
                     0
     in
-    if dayNum < 1 then
-        date predYear pred predDay
-    else
-        date yearNum monthNum dayNum
+        if dayNum < 1 then
+            date predYear pred predDay
+        else
+            date yearNum monthNum dayNum
 
 
 {-| A function that adds 1 day to the given date and returns it.
@@ -465,10 +519,10 @@ addDay dateIn =
             else
                 yearNum
     in
-    if dayNum > dim then
-        date succYear succ 1
-    else
-        date yearNum monthNum dayNum
+        if dayNum > dim then
+            date succYear succ 1
+        else
+            date yearNum monthNum dayNum
 
 
 getMonthInt : Date.Month -> Int
@@ -579,11 +633,12 @@ predMonth month =
             (month - 1)
                 |> flip rem 12
     in
-    if prev == 0 then
-        12
-    else
-        prev
-        
+        if prev == 0 then
+            12
+        else
+            prev
+
+
 daysInMonth : Int -> Int -> Int
 daysInMonth year month =
     case month of
@@ -625,5 +680,6 @@ daysInMonth year month =
 
         12 ->
             31
+
         _ ->
             31
