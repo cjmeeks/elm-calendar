@@ -1,6 +1,6 @@
 module Main exposing (..)
 
-import Calendar exposing (CalendarMsg, DayContent, Model, initCalendarModel, update, view, dateToString)
+import Calendar exposing (CalendarMsg, DayContent, Model, initCalendarModel, update, view, dateToString, setDayContent)
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -28,7 +28,7 @@ init =
         ( cModel, cCmd ) =
             initCalendarModel (text "default")
     in
-        ( Model cModel, Cmd.map CMsg cCmd )
+        ( Model <| setDayContent testCase cModel, Cmd.map CMsg cCmd )
 
 
 type Msg
@@ -51,8 +51,8 @@ view model =
     Html.map CMsg <| Calendar.view model.calendarModel
 
 
-testCase : List ( String, DayContent )
+testCase : List DayContent
 testCase =
-    [ ( dateToString (Date.date 2018 1 1), DayContent 0 0 (div [] [ text "hello" ]) (Date.date 2018 1 1) )
-    , ( dateToString (Date.date 2018 1 20), DayContent 0 0 (div [] [ text "hello2" ]) (Date.date 2018 1 20) )
+    [ DayContent 0 0 (div [] [ text "hello" ]) (Date.date 2018 1 1)
+    , DayContent 0 0 (div [] [ text "hello2" ]) (Date.date 2018 3 20)
     ]
