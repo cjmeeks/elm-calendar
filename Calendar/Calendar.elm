@@ -165,7 +165,7 @@ view model =
                     ( 2000, 1, 1 )
 
         getMonth =
-            Dict.get ( model.currentMonth, model.currentYear ) model.newContent
+            Dict.get ( model.currentYear, model.currentMonth ) model.newContent
 
         monthContent =
             case getMonth of
@@ -261,7 +261,7 @@ update msg model =
                         ( 12, model.currentYear - 1 )
                     else
                         ( model.currentMonth - 1, model.currentYear )
-                        
+
                 updatedContent =
                     case Dict.get ( newMonth, newYear ) model.newContent of
                         Just m ->
@@ -548,7 +548,7 @@ listToInternalMonth content =
     in
         case List.head content of
             Just item ->
-                (InternalMonth (TDate.year item.theDate) (TDate.month item.theDate) contentDict)
+                (InternalMonth (TDate.month item.theDate) (TDate.year item.theDate) contentDict)
 
             Nothing ->
                 InternalMonth 2000 1 Dict.empty
