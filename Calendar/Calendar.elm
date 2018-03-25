@@ -1,9 +1,9 @@
-module Calendar exposing (CalendarMsg, DayContent, Model, initCalendarModel, update, view, dateToString, setDayContent)
+module Calendar exposing (CalendarMsg, DayContent, CalendarModel, initCalendarModel, update, view, dateToString, setDayContent)
 
 {-| This library is for a drag and drop calendar
 
 
-# views
+# views 
 
 @docs view
 
@@ -15,15 +15,12 @@ module Calendar exposing (CalendarMsg, DayContent, Model, initCalendarModel, upd
 
 # model
 
-@docs Model
-@docs DayContent
+@docs CalendarModel, DayContent
 
 
 # functions
 
-@docs initCalendarModel
-@docs dateToString
-@docs setDayContent
+@docs initCalendarModel, dateToString, setDayContent
 
 
 # types
@@ -41,29 +38,39 @@ import Task exposing (..)
 import Time.Date as TDate exposing (..)
 import Set
 import List.Extra
+import Json.Decode as Decode
+import Mouse exposing (Position)
 
 
 {-|
 
     The model
-    pass in msg type of your html
     content is a dictionary of key: (Year, Month) to Value : Internal Month
 -}
-type alias Model =
-    { newContent : Dict.Dict ( Int, Int ) InternalMonth
+type alias CalendarModel =
+    { months : Dict.Dict ( Int, Int ) InternalMonth
     , currentDate : Maybe TDate.Date
     , currentMonth : Int
     , currentYear : Int
+    , drag : Maybe Drag
+    , movingContent : Maybe DayContent
     }
 
 
-{-| calendar msg
+{-| Calendar msg
 -}
 type CalendarMsg
     = RecieveDate Date.Date
     | MonthForward
     | MonthBackward
+      -- | Drags DragMsg
     | DoNothing
+
+
+type DragMsg
+    = DragStart Int Int Position DayContent
+    | DragAt Position
+    | DragEnd Position
 
 
 {-|
@@ -79,16 +86,28 @@ type alias DayContent =
     }
 
 
+{-|
 
-{-
-   key of days is (year,month,day)
+    key of days is (year,month,day)
 -}
-
-
 type alias InternalMonth =
     { month : Int
     , year : Int
     , days : Dict.Dict ( Int, Int, Int ) DayContent
+    }
+
+
+
+--item index is ()
+
+
+type alias Drag =
+    { xIndex : Int
+    , startX : Int
+    , currentX : Int
+    , yIndex : Int
+    , startY : Int
+    , currentY : Int
     }
 
 
@@ -97,9 +116,9 @@ type alias InternalMonth =
     The daycontent
     pass in msg type of your html
 -}
-initCalendarModel : Html CalendarMsg -> ( Model, Cmd CalendarMsg )
-initCalendarModel defaultHtml =
-    ( Model Dict.empty Nothing 0 0, Date.now |> Task.perform RecieveDate )
+initCalendarModel : ( CalendarModel, Cmd CalendarMsg )
+initCalendarModel =
+    ( CalendarModel Dict.empty Nothing 0 0 Nothing Nothing, Date.now |> Task.perform RecieveDate )
 
 
 
@@ -108,7 +127,7 @@ initCalendarModel defaultHtml =
 -}
 
 
-initWithDayContent : List DayContent -> Model
+initWithDayContent : List DayContent -> CalendarModel
 initWithDayContent list =
     let
         ( min, max ) =
@@ -126,7 +145,7 @@ initWithDayContent list =
         temp =
             Debug.log "list" combined
     in
-        Model Dict.empty Nothing 0 0
+        CalendarModel Dict.empty Nothing 0 0 Nothing Nothing
 
 
 initDayContentFromDate : Date -> DayContent
@@ -139,14 +158,14 @@ initDayContentFromDate d =
     Calendar.view
 
 -}
-view : Model -> Html CalendarMsg
+view : CalendarModel -> Html CalendarMsg
 view model =
     let
         dates =
             datesInRange (date 2018 1 1) (date 2018 1 31)
 
         listOfMonths =
-            List.map Tuple.second <| Dict.toList model.newContent
+            List.map Tuple.second <| Dict.toList model.months
 
         firstDateInContent =
             case List.head listOfMonths of
@@ -165,7 +184,7 @@ view model =
                     ( 2000, 1, 1 )
 
         getMonth =
-            Dict.get ( model.currentYear, model.currentMonth ) model.newContent
+            Dict.get ( model.currentYear, model.currentMonth ) model.months
 
         monthContent =
             case getMonth of
@@ -179,14 +198,31 @@ view model =
                 Nothing ->
                     [ text "There was an Error" ]
     in
-        div [ calendarGrid ] <|
+        div [ calendarGrid, class "calendar-container" ] <|
             List.append
                 [ div
-                    [ gridAccessSpanCol 1 7 1, headerGrid ]
-                    [ button [ onClick MonthBackward, gridAccess 1 1 ] [ text "<<" ]
-                    , h1 [ calendarHeader, gridAccess 1 2 ]
-                        [ text "CALENDAR!!" ]
-                    , button [ onClick MonthForward, gridAccess 1 3 ] [ text ">>" ]
+                    [ gridAccessSpanCol 1 7 1
+                    , headerGrid
+                    , class "calendar-header-container"
+                    ]
+                    [ button
+                        [ onClick MonthBackward
+                        , gridAccess 1 1
+                        , class "calendar-header-back-button"
+                        ]
+                        [ text "<<" ]
+                    , h1
+                        [ calendarHeader
+                        , gridAccess 1 2
+                        , class "calendar-header-title"
+                        ]
+                        [ text <| monthToString model.currentMonth ]
+                    , button
+                        [ onClick MonthForward
+                        , gridAccess 1 3
+                        , class "calendar-header-forward-button"
+                        ]
+                        [ text ">>" ]
                     ]
                 ]
                 monthContent
@@ -197,7 +233,7 @@ viewMonth month =
     List.map
         (\( x, dayContent ) ->
             div [ gridAccess dayContent.weekIndex dayContent.dayIndex, gridItem ]
-                [ h1 [] [ text <| dateToString dayContent.theDate ]
+                [ h1 [] [ text <| dateToString dayContent.theDate ] --h1 tag to be deleted
                 , dayContent.content
                 ]
         )
@@ -205,22 +241,12 @@ viewMonth month =
         Dict.toList month.days
 
 
-
--- <|
--- viewMonthFromList indexed
-
-
-viewMonthFromList : List ( ( Int, Int ), Date ) -> List (Html CalendarMsg)
-viewMonthFromList list =
-    List.map (\( ( x, y ), d ) -> div [ gridAccess y x, gridItem ] [ text <| TDate.toISO8601 d ]) list
-
-
 {-| updates the Calendar
 
     Calendar.update
 
 -}
-update : CalendarMsg -> Model -> ( Model, Cmd CalendarMsg )
+update : CalendarMsg -> CalendarModel -> ( CalendarModel, Cmd CalendarMsg )
 update msg model =
     case msg of
         RecieveDate rDate ->
@@ -245,14 +271,14 @@ update msg model =
                         ( model.currentMonth + 1, model.currentYear )
 
                 updatedContent =
-                    case Dict.get ( newMonth, newYear ) model.newContent of
+                    case Dict.get ( newMonth, newYear ) model.months of
                         Just m ->
-                            model.newContent
+                            model.months
 
                         Nothing ->
-                            Dict.insert ( newYear, newMonth ) (insertDumbyMonth newYear newMonth) model.newContent
+                            Dict.insert ( newYear, newMonth ) (insertDumbyMonth newYear newMonth) model.months
             in
-                ( { model | currentMonth = newMonth, currentYear = newYear, newContent = updatedContent }, Cmd.none )
+                ( { model | currentMonth = newMonth, currentYear = newYear, months = updatedContent }, Cmd.none )
 
         MonthBackward ->
             let
@@ -263,19 +289,118 @@ update msg model =
                         ( model.currentMonth - 1, model.currentYear )
 
                 updatedContent =
-                    case Dict.get ( newMonth, newYear ) model.newContent of
+                    case Dict.get ( newMonth, newYear ) model.months of
                         Just m ->
-                            model.newContent
+                            model.months
 
                         Nothing ->
-                            Dict.insert ( newYear, newMonth ) (insertDumbyMonth newYear newMonth) model.newContent
+                            Dict.insert ( newYear, newMonth ) (insertDumbyMonth newYear newMonth) model.months
             in
-                ( { model | currentMonth = newMonth, currentYear = newYear, newContent = updatedContent }, Cmd.none )
+                ( { model | currentMonth = newMonth, currentYear = newYear, months = updatedContent }, Cmd.none )
 
         DoNothing ->
             ( model, Cmd.none )
 
 
+updateDrags : DragMsg -> CalendarModel -> (CalendarModel, Cmd CalendarMsg)
+updateDrags msg model =
+    case msg of
+        DragStart idx idy pos moved ->
+            ({model | drag = Just <| 
+                                { yIndex = idy
+                                , startY = pos.y
+                                , currentY = pos.y
+                                , xIndex = idx
+                                , startX = pos.x
+                                , currentX = pos.x 
+                                }
+                    , movingContent = Just moved
+            }, Cmd.none)
+    
+        DragAt pos ->
+            { model
+                | drag =
+                    Maybe.map (\{ xIndex, startX, yIndex, startY  } -> 
+                                { yIndex = yIndex
+                                , startY = startY
+                                , currentY = pos.y
+                                , xIndex = xIndex
+                                , startX = startX
+                                , currentX = pos.x 
+                                }) model.drag
+            }
+                ! []
+        DragEnd pos ->
+            case model.drag of
+                Just { xIndex, startX, currentX, yIndex, startY, currentY } -> --x =270 y=170
+                    let
+                        newModel =
+                             moveItem
+                                xIndex
+                                ((currentX - startX
+                                    + if currentX < startX then
+                                        -5
+                                      else
+                                        5
+                                 )
+                                    // 260
+                                )
+                                yIndex
+                                ((currentY - startY
+                                    + if currentY < startY then
+                                        -5
+                                      else
+                                        5
+                                 )
+                                    // 170
+                                )
+                                model
+                    in
+                    { newModel
+                        | drag = Nothing
+                        , movingContent = Nothing
+                    }
+                        ! []
+
+                Nothing ->
+                    { model
+                        | drag = Nothing
+                    }
+                        ! []
+
+moveItem : Int -> Int -> Int -> Int -> CalendarModel -> CalendarModel
+moveItem fromPosX offsetX fromPosY offsetY model =
+    let
+        indexedMonthContent = case Dict.get (model.currentMonth, model.currentYear) model.months of
+            Just month ->
+                Dict.fromList <| List.map (\x -> ((x.dayIndex, x.weekIndex), x)) <| Dict.values month.days        
+            Nothing ->
+                Dict.empty
+        
+        newX = fromPosX + offsetX % 7
+
+        newY = (fromPosY + offsetY % 5) + 1
+
+        --TODO do something else when content is already there
+        newMonth = 
+            case model.movingContent of
+                Just moved -> 
+                    listToInternalMonth <| Dict.values <| Dict.insert (newX, newY) moved indexedMonthContent 
+                        
+                Nothing -> listToInternalMonth <| Dict.values indexedMonthContent 
+
+        newMonths = Dict.insert (newMonth.month, newMonth.year) newMonth model.months
+        -- moved =
+            -- List.take 1 <| List.drop fromPos list
+    in
+        {model | months = newMonths }
+        -- List.take (fromPos + offset) listWithoutMoved
+        --     ++ moved
+        --     ++ List.drop (fromPos + offset) listWithoutMoved
+
+
+
+      
 {-|
 
     converts a date to a string
@@ -426,7 +551,7 @@ listOfMonthInts =
 
 {-| Takes a list of day content and sets that as the calendar content
 -}
-setDayContent : List DayContent -> Model -> Model
+setDayContent : List DayContent -> CalendarModel -> CalendarModel
 setDayContent days model =
     let
         ( min, max ) =
@@ -450,7 +575,7 @@ setDayContent days model =
         monthDict =
             Dict.fromList <| List.map (\x -> ( ( x.year, x.month ), x )) gridStuff
     in
-        { model | newContent = monthDict }
+        { model | months = monthDict }
 
 
 
@@ -472,11 +597,11 @@ insertDumbyMonth year month =
         InternalMonth month year dayContent
 
 
-addDayContent : ( Int, Int, Int ) -> Html CalendarMsg -> Model -> Model
+addDayContent : ( Int, Int, Int ) -> Html CalendarMsg -> CalendarModel -> CalendarModel
 addDayContent ( year, month, day ) content model =
     let
         getMonth =
-            case Dict.get ( year, month ) model.newContent of
+            case Dict.get ( year, month ) model.months of
                 Just m ->
                     m
 
@@ -495,20 +620,20 @@ addDayContent ( year, month, day ) content model =
             { getMonth | days = newMonthContent }
 
         newModelContent =
-            Dict.insert ( year, month ) newMonth model.newContent
+            Dict.insert ( year, month ) newMonth model.months
     in
-        { model | newContent = newModelContent }
+        { model | months = newModelContent }
 
 
 
 --DeleteDayContent
 
 
-deleteDayContent : ( Int, Int, Int ) -> Model -> Model
+deleteDayContent : ( Int, Int, Int ) -> CalendarModel -> CalendarModel
 deleteDayContent ( year, month, day ) model =
     let
         newMonth =
-            case Dict.get ( year, month ) model.newContent of
+            case Dict.get ( year, month ) model.months of
                 Just m ->
                     let
                         newDays =
@@ -520,9 +645,9 @@ deleteDayContent ( year, month, day ) model =
                     InternalMonth 0 0 Dict.empty
 
         newModelContent =
-            Dict.insert ( year, month ) newMonth model.newContent
+            Dict.insert ( year, month ) newMonth model.months
     in
-        { model | newContent = newModelContent }
+        { model | months = newModelContent }
 
 
 groupDayContentByMonth : List DayContent -> List InternalMonth
@@ -584,11 +709,11 @@ getMonthGridFromDates dates =
         getGridXY dates 2 []
 
 
-updateContent : Model -> Model
+updateContent : CalendarModel -> CalendarModel
 updateContent model =
     let
         listOfMonths =
-            Dict.toList model.newContent
+            Dict.toList model.months
 
         newListOfMonths =
             List.map
@@ -597,7 +722,7 @@ updateContent model =
                 )
                 listOfMonths
     in
-        { model | newContent = Dict.fromList newListOfMonths }
+        { model | months = Dict.fromList newListOfMonths }
 
 
 updateInternalMonthGrid : InternalMonth -> InternalMonth
@@ -851,6 +976,49 @@ monthFromInt d =
 
         _ ->
             Date.Jan
+
+
+monthToString : Int -> String
+monthToString d =
+    case d of
+        1 ->
+            "January"
+
+        2 ->
+            "Febuary"
+
+        3 ->
+            "March"
+
+        4 ->
+            "April"
+
+        5 ->
+            "May"
+
+        6 ->
+            "June"
+
+        7 ->
+            "July"
+
+        8 ->
+            "August"
+
+        9 ->
+            "September"
+
+        10 ->
+            "October"
+
+        11 ->
+            "November"
+
+        12 ->
+            "December"
+
+        _ ->
+            "Internal Error"
 
 
 {-| An opaque function to determine whether a given year is a leap year.
