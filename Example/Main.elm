@@ -1,6 +1,6 @@
 module Main exposing (..)
 
-import Calendar exposing (CalendarMsg, DayContent, Model, initCalendarModel, update, view, dateToString, setDayContent)
+import Calendar exposing (CalendarMsg, DayContent, CalendarModel, initCalendarModel, update, view, dateToString, setDayContent, subscriptions)
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -13,20 +13,24 @@ main =
         { init = init
         , update = update
         , view = view
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions
         }
 
 
 type alias Model =
-    { calendarModel : Calendar.Model
+    { calendarModel : Calendar.CalendarModel
     }
 
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.map CMsg <| Calendar.subscriptions model.calendarModel
 
 init : ( Model, Cmd Msg )
 init =
     let
         ( cModel, cCmd ) =
-            initCalendarModel (text "default")
+            initCalendarModel 
     in
         ( Model <| setDayContent testCase cModel, Cmd.map CMsg cCmd )
 
@@ -54,5 +58,6 @@ view model =
 testCase : List DayContent
 testCase =
     [ DayContent 0 0 (div [] [ text "hello" ]) (Date.date 2018 1 1)
+    , DayContent 0 0 (div [] [ text "asdf" ]) (Date.date 2018 1 23)
     , DayContent 0 0 (div [] [ text "hello2" ]) (Date.date 2018 3 20)
     ]

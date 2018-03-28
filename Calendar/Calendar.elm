@@ -1,4 +1,4 @@
-module Calendar exposing (CalendarMsg, DayContent, CalendarModel, initCalendarModel, update, view, dateToString, setDayContent)
+module Calendar exposing (CalendarMsg, DayContent, CalendarModel, initCalendarModel, update, view, dateToString, setDayContent, subscriptions)
 
 {-| This library is for a drag and drop calendar
 
@@ -12,7 +12,9 @@ module Calendar exposing (CalendarMsg, DayContent, CalendarModel, initCalendarMo
 
 @docs update
 
+# subscriptions
 
+@docs subscriptions
 # model
 
 @docs CalendarModel, DayContent
@@ -33,6 +35,7 @@ import Date
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Attributes as Attrs
 import Html.Events exposing (..)
 import Task exposing (..)
 import Time.Date as TDate exposing (..)
@@ -63,12 +66,12 @@ type CalendarMsg
     = RecieveDate Date.Date
     | MonthForward
     | MonthBackward
-      -- | Drags DragMsg
+    | Drags DragMsg
     | DoNothing
 
 
 type DragMsg
-    = DragStart Int Int Position DayContent
+    = DragStart Int Int DayContent Position
     | DragAt Position
     | DragEnd Position
 
@@ -121,6 +124,17 @@ initCalendarModel =
     ( CalendarModel Dict.empty Nothing 0 0 Nothing Nothing, Date.now |> Task.perform RecieveDate )
 
 
+{-|
+    subscriptions : Calendar Subscriptions
+-}
+subscriptions : CalendarModel -> Sub CalendarMsg
+subscriptions model =
+    case model.drag of
+        Nothing ->
+            Sub.none
+
+        Just _ ->
+            Sub.map Drags <| Sub.batch [ Mouse.moves DragAt, Mouse.ups DragEnd ]
 
 {-
    initial function to get the daterange
@@ -141,9 +155,6 @@ initWithDayContent list =
 
         combined =
             combineDateRangeWithListOfDayContent datesList list []
-
-        temp =
-            Debug.log "list" combined
     in
         CalendarModel Dict.empty Nothing 0 0 Nothing Nothing
 
@@ -189,11 +200,7 @@ view model =
         monthContent =
             case getMonth of
                 Just item ->
-                    let
-                        temp =
-                            Debug.log "days" item.days
-                    in
-                        viewMonth item
+                    viewMonth model item
 
                 Nothing ->
                     [ text "There was an Error" ]
@@ -228,17 +235,57 @@ view model =
                 monthContent
 
 
-viewMonth : InternalMonth -> List (Html CalendarMsg)
-viewMonth month =
-    List.map
-        (\( x, dayContent ) ->
-            div [ gridAccess dayContent.weekIndex dayContent.dayIndex, gridItem ]
-                [ h1 [] [ text <| dateToString dayContent.theDate ] --h1 tag to be deleted
-                , dayContent.content
-                ]
-        )
-    <|
-        Dict.toList month.days
+viewMonth : CalendarModel -> InternalMonth -> List (Html CalendarMsg)
+viewMonth model month =
+    let
+        moveStyle =
+            case model.drag of
+                Just { xIndex, startX, currentX , yIndex, startY , currentY } ->
+                    -- if itemIndex == idx then
+                        [ ( "transform", "translateX( " ++ toString (currentX - startX) ++ "px) translateY( " ++ toString (currentY - startY) ++ "px) translateZ(10px)" )
+                        , ( "box-shadow", "0 3px 6px rgba(0,0,0,0.24)" )
+                        , ( "willChange", "transform" )
+                        ]
+                Nothing ->
+                    []
+
+    in 
+        List.map
+            (\( x, dayContent ) ->
+                viewDayContent dayContent.dayIndex dayContent.weekIndex dayContent model
+            )
+        <|
+            Dict.toList month.days
+
+viewDayContent : Int -> Int -> DayContent -> CalendarModel -> Html CalendarMsg
+viewDayContent idx idy dayContent model =
+    let
+        moveStyle =
+            case model.drag of
+                Just { xIndex, startX, currentX , yIndex, startY , currentY } ->
+                    if xIndex == idx && yIndex == idy then
+                        [ ( "transform", "translateX( " ++ toString (currentX - startX) ++ "px) translateY( " ++ toString (currentY - startY) ++ "px) translateZ(10px)" )
+                        , ( "box-shadow", "0 3px 6px rgba(0,0,0,0.24)" )
+                        , ( "willChange", "transform" )
+                        ]
+                    else 
+                        []
+                Nothing ->
+                    []
+    in
+        div [ gridAccess idy idx, gridItem ]
+            [ h1 [] [ text <| dateToString dayContent.theDate ] --h1 tag to be deleted
+            , div
+                [ style moveStyle
+                , Attrs.map Drags <| onMouseDown <| DragStart dayContent.dayIndex dayContent.weekIndex dayContent
+                ] 
+                [dayContent.content]
+            ]
+
+        
+onMouseDown : (Position -> msg) -> Attribute msg
+onMouseDown msg =
+    on "mousedown" (Decode.map msg Mouse.position)
 
 
 {-| updates the Calendar
@@ -271,7 +318,7 @@ update msg model =
                         ( model.currentMonth + 1, model.currentYear )
 
                 updatedContent =
-                    case Dict.get ( newMonth, newYear ) model.months of
+                    case Dict.get ( newYear, newMonth ) model.months of
                         Just m ->
                             model.months
 
@@ -289,7 +336,7 @@ update msg model =
                         ( model.currentMonth - 1, model.currentYear )
 
                 updatedContent =
-                    case Dict.get ( newMonth, newYear ) model.months of
+                    case Dict.get ( newYear, newMonth ) model.months of
                         Just m ->
                             model.months
 
@@ -298,6 +345,9 @@ update msg model =
             in
                 ( { model | currentMonth = newMonth, currentYear = newYear, months = updatedContent }, Cmd.none )
 
+        Drags msg_ ->
+            updateDrags msg_ model
+
         DoNothing ->
             ( model, Cmd.none )
 
@@ -305,7 +355,7 @@ update msg model =
 updateDrags : DragMsg -> CalendarModel -> (CalendarModel, Cmd CalendarMsg)
 updateDrags msg model =
     case msg of
-        DragStart idx idy pos moved ->
+        DragStart idx idy moved pos ->
             ({model | drag = Just <| 
                                 { yIndex = idy
                                 , startY = pos.y
@@ -322,7 +372,7 @@ updateDrags msg model =
                 | drag =
                     Maybe.map (\{ xIndex, startX, yIndex, startY  } -> 
                                 { yIndex = yIndex
-                                , startY = startY
+                                , startY = startY 
                                 , currentY = pos.y
                                 , xIndex = xIndex
                                 , startX = startX
@@ -334,26 +384,13 @@ updateDrags msg model =
             case model.drag of
                 Just { xIndex, startX, currentX, yIndex, startY, currentY } -> --x =270 y=170
                     let
+                        temp = Debug.log "drag" model.drag
                         newModel =
                              moveItem
                                 xIndex
-                                ((currentX - startX
-                                    + if currentX < startX then
-                                        -5
-                                      else
-                                        5
-                                 )
-                                    // 260
-                                )
+                                (((toFloat currentX) - (toFloat startX)) / 260)
                                 yIndex
-                                ((currentY - startY
-                                    + if currentY < startY then
-                                        -5
-                                      else
-                                        5
-                                 )
-                                    // 170
-                                )
+                                (((toFloat currentY) - (toFloat startY)) / 180)
                                 model
                     in
                     { newModel
@@ -368,35 +405,41 @@ updateDrags msg model =
                     }
                         ! []
 
-moveItem : Int -> Int -> Int -> Int -> CalendarModel -> CalendarModel
+moveItem : Int -> Float -> Int -> Float -> CalendarModel -> CalendarModel
 moveItem fromPosX offsetX fromPosY offsetY model =
     let
-        indexedMonthContent = case Dict.get (model.currentMonth, model.currentYear) model.months of
+        indexedMonthContent = case Dict.get (model.currentYear, model.currentMonth) model.months of
             Just month ->
                 Dict.fromList <| List.map (\x -> ((x.dayIndex, x.weekIndex), x)) <| Dict.values month.days        
             Nothing ->
                 Dict.empty
+            
+        temp = (Debug.log "x" (fromPosX, offsetX), Debug.log "y" (fromPosY, offsetY)  )
         
-        newX = fromPosX + offsetX % 7
+        newX = (fromPosX + (round offsetX)) % 8
 
-        newY = (fromPosY + offsetY % 5) + 1
-
+        -- temp = (Debug.log "fromposx" fromPosX, Debug.log "offsetX" offsetX,Debug.log "newX" newX)
+        newY = (fromPosY + (round offsetY)) % 7
+        
+        _ = (Debug.log "new" (newX, newY))
         --TODO do something else when content is already there
         newMonth = 
             case model.movingContent of
                 Just moved -> 
-                    listToInternalMonth <| Dict.values <| Dict.insert (newX, newY) moved indexedMonthContent 
+                    case Dict.get (newX, newY) indexedMonthContent of
+                        Just item ->
+                            listToInternalMonth <| Dict.values <| Dict.insert (moved.dayIndex, moved.weekIndex) {item | dayIndex = moved.dayIndex, weekIndex = moved.weekIndex, theDate = moved.theDate} <| Dict.insert (newX, newY) { moved | dayIndex = newX, weekIndex = newY, theDate = item.theDate } indexedMonthContent 
+
+                        Nothing -> listToInternalMonth <| Dict.values indexedMonthContent 
+                            
                         
                 Nothing -> listToInternalMonth <| Dict.values indexedMonthContent 
 
-        newMonths = Dict.insert (newMonth.month, newMonth.year) newMonth model.months
-        -- moved =
-            -- List.take 1 <| List.drop fromPos list
+        newMonths = Dict.insert (newMonth.year, newMonth.month) newMonth model.months
+
     in
-        {model | months = newMonths }
-        -- List.take (fromPos + offset) listWithoutMoved
-        --     ++ moved
-        --     ++ List.drop (fromPos + offset) listWithoutMoved
+        { model | months = newMonths }
+
 
 
 
@@ -519,6 +562,7 @@ calendarGrid =
         , ( "width", "100%" )
         , ( "grid-template-rows", "5% 19% 19% 19% 19% 19%" )
         , ( "grid-template-columns", "14.2% 14.2% 14.2% 14.2% 14.2% 14.2%" )
+        , ( "user-select", "none")
         ]
 
 
