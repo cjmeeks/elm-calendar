@@ -110,6 +110,15 @@ type alias InternalMonth =
 -- make config have default window sizing or have custom div size -> stretch
 -- have a way for user to see which content was moved to update their stuff
 
+type alias Config =
+    { customHeader : Bool
+    , customButtons : Bool 
+    }
+    
+type alias CustomButtons =
+    { forwardButton : Html CalendarMsg
+    , backButton : Html CalendarMsg
+    }
 
 type alias Drag =
     { xIndex : Int
