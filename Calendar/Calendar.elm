@@ -4,6 +4,7 @@ module Calendar
         , DragMsg(DragEnd)
         , CalendarModel
         , CalendarDate(..)
+        , MovedDates
         , initCalendarModel
         , update
         , view
@@ -14,7 +15,7 @@ module Calendar
         , setCustomBackButton
         , addDayContent
         , deleteDayContent
-        , getFromAndToDates
+        , catchToAndFromDates
         )
 
 {-| This library is for a drag and drop calendar
@@ -37,7 +38,7 @@ module Calendar
 
 # model
 
-@docs CalendarModel, initCalendarModel
+@docs CalendarModel, initCalendarModel, MovedDates
 
 
 # functions
@@ -45,7 +46,7 @@ module Calendar
 Inits and setters for customizing the html
 
 @docs setDayContent, setCustomForwardButton, setCustomBackButton, turnOnCustomButtons, addDayContent, deleteDayContent
-@docs getFromAndToDates
+@docs catchToAndFromDates
 
 # types
 
@@ -94,7 +95,6 @@ type CalendarMsg
     | MonthBackward
     | Drags DragMsg
     | Resize Window.Size
-    | MovedItem CalendarDate CalendarDate
     | DoNothing
 
 {-|
@@ -103,6 +103,13 @@ type CalendarMsg
 type CalendarDate = 
     CalendarDate (Int, Int, Int)
 
+{-|
+    Moved item holds the to and from CalendarDate
+-}
+type alias MovedDates =
+    { to : CalendarDate
+    , from : CalendarDate
+    }
 {-|
     Export DragEnd to determine when something has moved
 -}
@@ -497,13 +504,22 @@ update msg model =
     case msg of
         RecieveDate rDate ->
             let
-                monthInt =
-                    getMonthInt (Date.month rDate)
+                (monthInt, yearInt) =
+                    (getMonthInt (Date.month rDate), Date.year rDate)
+
+                newMonths =
+                    case Dict.get (yearInt, monthInt) model.months of
+                        Just _ -> 
+                            model.months
+                            
+                        Nothing ->
+                            Dict.insert (yearInt, monthInt) (insertDumbyMonth yearInt monthInt) model.months
             in
                 { model
                     | currentDate = Just (date (Date.year rDate) monthInt (Date.day rDate))
                     , currentMonth = monthInt
-                    , currentYear = Date.year rDate
+                    , currentYear = yearInt
+                    , months = newMonths
                   }
                 ! []
 
@@ -545,9 +561,6 @@ update msg model =
 
         Drags msg_ ->
             updateDrags msg_ model
-        
-        MovedItem from to ->
-            model ! []
 
         Resize newSize ->
             { model | size = newSize }! []
@@ -603,7 +616,7 @@ updateDrags msg model =
                             (toFloat model.size.height) / 6
 
 
-                        (newModel, cmds) =
+                        newModel =
                             moveItem
                                 xIndex
                                 (((toFloat currentX) - (toFloat startX)) / calculateX)
@@ -615,7 +628,7 @@ updateDrags msg model =
                             | drag = Nothing
                             , movingContent = Nothing
                         }
-                        ! [ cmds ]
+                        ! [ ]
 
                 Nothing ->
                     { model
@@ -624,7 +637,7 @@ updateDrags msg model =
                         ! []
 
 
-moveItem : Int -> Float -> Int -> Float -> CalendarModel -> (CalendarModel, Cmd CalendarMsg)
+moveItem : Int -> Float -> Int -> Float -> CalendarModel -> CalendarModel
 moveItem fromPosX offsetX fromPosY offsetY model =
     let
         indexedMonthContent =
@@ -662,23 +675,40 @@ moveItem fromPosX offsetX fromPosY offsetY model =
                 Nothing ->
                     (listToInternalMonth <| Dict.values indexedMonthContent, Nothing, Nothing)
 
-        temp = Debug.log "moved dates: " (to,from)
-        
         newMonths =
             Dict.insert ( newMonth.year, newMonth.month ) newMonth model.months
-        
-        cmd = 
-            case (to,from) of
-                (Just (ty,tm,td), Just (fy,fm,fd)) ->
-                    (MovedItem (CalendarDate (fy,fm,fd)) (CalendarDate (ty,tm,td)))
-                _ -> DoNothing
+    
     in
-        { model | months = newMonths } ! [ Cmd.map (always cmd) Cmd.none ]
-
+        { model | months = newMonths } 
 
 {-|
-   Get from date and to date of the moved content for use by the user
+   Catch the from date and to date of the moved content for use by the user
 -}
+catchToAndFromDates : CalendarMsg -> CalendarModel -> Maybe MovedDates
+catchToAndFromDates msg model =
+    case msg of
+        Drags dMsg ->
+            case dMsg of
+                DragEnd pos ->
+                    let
+                        (toDate, fromDate) =
+                            getFromAndToDates pos model
+                    in
+                        case (toDate, fromDate) of
+                            (Just toCalendarDate, Just fromCalendarDate) ->
+                                Just <| MovedDates toCalendarDate fromCalendarDate
+
+                            _ -> 
+                                Nothing
+
+                _ -> 
+                    Nothing
+
+        _ -> 
+            Nothing
+        
+
+
 getFromAndToDates : Position -> CalendarModel -> (Maybe CalendarDate, Maybe CalendarDate)
 getFromAndToDates pos model =
     case model.drag of

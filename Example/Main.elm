@@ -47,30 +47,20 @@ update msg model =
     case msg of
         CMsg cMsg ->
             let
+                toFromDates = 
+                    Calendar.catchToAndFromDates cMsg model.calendarModel
+
                 ( updatedCalendar, cCmd ) =
                     Calendar.update cMsg model.calendarModel
-
-                (updatedModel, cmds)=
-                    case cMsg of
-                        Drags dMsg ->
-                            case dMsg of
-                                DragEnd pos ->
-                                    let
-                                        (toDate, fromDate) =
-                                            Calendar.getFromAndToDates pos model.calendarModel
-                                    in
-                                        case (toDate, fromDate) of
-                                            (Just toCalendarDate, Just fromCalendarDate) ->
-                                                update (ItemHasMoved toCalendarDate fromCalendarDate) { model | calendarModel = updatedCalendar }
-
-                                            _ -> 
-                                                { model | calendarModel = updatedCalendar } ! []
-
-                                _ -> 
-                                    { model | calendarModel = updatedCalendar } ! []
-
-                        _ -> 
-                            { model | calendarModel = updatedCalendar } ! []
+                
+                (updatedModel, cmds) =
+                    case toFromDates of
+                        Just dates ->
+                            update (ItemHasMoved dates.from dates.to) {model | calendarModel = updatedCalendar }
+                            
+                    
+                        Nothing -> {model | calendarModel = updatedCalendar } ! []
+                            
             in
                 ( updatedModel, Cmd.batch [Cmd.map CMsg cCmd, cmds] )
                 
@@ -95,11 +85,11 @@ testCustomBackButton =
 
 testCase : List (CalendarDate, Html CalendarMsg)
 testCase =
-    [ (CalendarDate (2018, 1, 1) ,div [] [ text "hello" ])
-    , (CalendarDate (2018, 3, 20) ,div [] [ text "hello3" ])
-    , (CalendarDate (2018, 1, 2) ,div [] [ text "hello4" ])
-    , (CalendarDate (2018, 1, 14) ,div [] [ text "hello5" ])
-    , (CalendarDate (2018, 1, 23) ,div [] [ text "hello2" ])
-    , (CalendarDate (2018, 1, 10) ,div [] [ text "hello6" ])
-    , (CalendarDate (2018, 4, 10) ,div [] [ text "hello7" ])
+    [ (CalendarDate (2018, 4, 1) ,div [] [ text "hello" ])
+    , (CalendarDate (2018, 4, 20) ,div [] [ text "hello3" ])
+    , (CalendarDate (2018, 4, 2) ,div [] [ text "hello4" ])
+    , (CalendarDate (2018, 4, 14) ,div [] [ text "hello5" ])
+    , (CalendarDate (2018, 4, 23) ,div [] [ text "hello2" ])
+    , (CalendarDate (2018, 4, 10) ,div [] [ text "hello6" ])
+    -- , (CalendarDate (2018, 4, 10) ,div [] [ text "hello7" ])
     ]
