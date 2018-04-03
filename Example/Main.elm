@@ -1,6 +1,6 @@
 module Main exposing (..)
 
-import Calendar exposing (CalendarMsg, DayContent, CalendarModel, initCalendarModel, update, view, dateToString, setDayContent, subscriptions)
+import Calendar exposing (..)
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -26,17 +26,20 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.map CMsg <| Calendar.subscriptions model.calendarModel
 
+
 init : ( Model, Cmd Msg )
 init =
     let
         ( cModel, cCmd ) =
             initCalendarModel 
+
     in
         ( Model <| setDayContent testCase cModel, Cmd.map CMsg cCmd )
 
 
 type Msg
     = CMsg CalendarMsg
+    | ItemHasMoved CalendarDate CalendarDate
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -44,10 +47,38 @@ update msg model =
     case msg of
         CMsg cMsg ->
             let
-                ( updatedModel, cCmd ) =
+                ( updatedCalendar, cCmd ) =
                     Calendar.update cMsg model.calendarModel
+
+                (updatedModel, cmds)=
+                    case cMsg of
+                        Drags dMsg ->
+                            case dMsg of
+                                DragEnd pos ->
+                                    let
+                                        (toDate, fromDate) =
+                                            Calendar.getFromAndToDates pos model.calendarModel
+                                    in
+                                        case (toDate, fromDate) of
+                                            (Just toCalendarDate, Just fromCalendarDate) ->
+                                                update (ItemHasMoved toCalendarDate fromCalendarDate) { model | calendarModel = updatedCalendar }
+
+                                            _ -> 
+                                                { model | calendarModel = updatedCalendar } ! []
+
+                                _ -> 
+                                    { model | calendarModel = updatedCalendar } ! []
+
+                        _ -> 
+                            { model | calendarModel = updatedCalendar } ! []
             in
-                ( { model | calendarModel = updatedModel }, Cmd.map CMsg cCmd )
+                ( updatedModel, Cmd.batch [Cmd.map CMsg cCmd, cmds] )
+                
+        ItemHasMoved from to ->
+            let
+                temp = Debug.log "dates: " (from,to)
+            in
+                model ! []
 
 
 view : Model -> Html Msg
@@ -55,9 +86,20 @@ view model =
     Html.map CMsg <| Calendar.view model.calendarModel
 
 
-testCase : List DayContent
+
+testCustomForwardButton =
+    div [] [text "Forward"]
+
+testCustomBackButton = 
+    div [] [text "Back"]
+
+testCase : List (CalendarDate, Html CalendarMsg)
 testCase =
-    [ DayContent 0 0 (div [] [ text "hello" ]) (Date.date 2018 1 1)
-    , DayContent 0 0 (div [] [ text "asdf" ]) (Date.date 2018 1 23)
-    , DayContent 0 0 (div [] [ text "hello2" ]) (Date.date 2018 3 20)
+    [ (CalendarDate (2018, 1, 1) ,div [] [ text "hello" ])
+    , (CalendarDate (2018, 3, 20) ,div [] [ text "hello3" ])
+    , (CalendarDate (2018, 1, 2) ,div [] [ text "hello4" ])
+    , (CalendarDate (2018, 1, 14) ,div [] [ text "hello5" ])
+    , (CalendarDate (2018, 1, 23) ,div [] [ text "hello2" ])
+    , (CalendarDate (2018, 1, 10) ,div [] [ text "hello6" ])
+    , (CalendarDate (2018, 4, 10) ,div [] [ text "hello7" ])
     ]
