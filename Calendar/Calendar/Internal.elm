@@ -12,12 +12,12 @@ import Mouse exposing (Position)
 import Calendar.Styles exposing (..)
 
 
-initDayContentFromDate : Date -> DayContent
+initDayContentFromDate : Date -> (DayContent a)
 initDayContentFromDate d =
     DayContent 0 0 (div [] []) d
 
 
-viewMonth : CalendarModel -> InternalMonth -> List (Html CalendarMsg)
+viewMonth : (CalendarModel a) -> (InternalMonth a) -> List (Html (CalendarMsg a))
 viewMonth model month =
     let
         moveStyle =
@@ -39,7 +39,7 @@ viewMonth model month =
             Dict.toList month.days
 
 
-viewDayContent : Int -> Int -> DayContent -> CalendarModel -> Html CalendarMsg
+viewDayContent : Int -> Int -> (DayContent a) -> (CalendarModel a) -> Html (CalendarMsg a)
 viewDayContent idx idy dayContent model =
     let
         moveStyle =
@@ -61,7 +61,7 @@ viewDayContent idx idy dayContent model =
                 [ style moveStyle
                 , Attrs.map Drags <| Calendar.Styles.onMouseDown <| DragStart dayContent.dayIndex dayContent.weekIndex dayContent
                 ]
-                [ dayContent.content ]
+                [ Html.map CustomMsg dayContent.content ]
 
         defaultHeader =
             h3 [ defaultHeaderStyle ] [ text <| dateToString dayContent.theDate ]
@@ -78,7 +78,7 @@ viewDayContent idx idy dayContent model =
             innerHtml
 
 
-updateDrags : DragMsg -> CalendarModel -> ( CalendarModel, Cmd CalendarMsg )
+updateDrags : (DragMsg a) -> (CalendarModel a) -> ( (CalendarModel a), Cmd (CalendarMsg a) )
 updateDrags msg model =
     case msg of
         DragStart idx idy moved pos ->
@@ -145,7 +145,7 @@ updateDrags msg model =
                         ! []
 
 
-moveItem : Int -> Float -> Int -> Float -> CalendarModel -> CalendarModel
+moveItem : Int -> Float -> Int -> Float -> (CalendarModel a) -> (CalendarModel a)
 moveItem fromPosX offsetX fromPosY offsetY model =
     let
         indexedMonthContent =
@@ -189,7 +189,7 @@ moveItem fromPosX offsetX fromPosY offsetY model =
         { model | months = newMonths }
 
 
-getFromAndToDates : Position -> CalendarModel -> ( Maybe CalendarDate, Maybe CalendarDate )
+getFromAndToDates : Position -> (CalendarModel a) -> ( Maybe CalendarDate, Maybe CalendarDate )
 getFromAndToDates pos model =
     case model.drag of
         Just { xIndex, startX, currentX, yIndex, startY, currentY } ->
@@ -240,7 +240,7 @@ getFromAndToDates pos model =
             in
                 case ( to, from ) of
                     ( Just ( ty, tm, td ), Just ( fy, fm, fd ) ) ->
-                        ( Just <| CalendarDate ( fy, fm, fd ), Just <| CalendarDate ( ty, tm, td ) )
+                        ( Just <| CalendarDate ( ty, tm, td ), Just <| CalendarDate ( fy, fm, fd ) )
 
                     _ ->
                         ( Nothing, Nothing )
@@ -293,7 +293,7 @@ getMinAndMaxDate dates =
         ( minMonthDate, maxMonthDate )
 
 
-combineDateRangeWithListOfDayContent : List DayContent -> List DayContent -> List DayContent -> List DayContent
+combineDateRangeWithListOfDayContent : List (DayContent a) -> List (DayContent a) -> List (DayContent a) -> List (DayContent a)
 combineDateRangeWithListOfDayContent dateRange list acc =
     case ( dateRange, list ) of
         ( d :: dli, m :: mli ) ->
@@ -319,7 +319,7 @@ combineDateRangeWithListOfDayContent dateRange list acc =
             acc
 
 
-insertDumbyMonth : Int -> Int -> InternalMonth
+insertDumbyMonth : Int -> Int -> (InternalMonth a)
 insertDumbyMonth year month =
     let
         dates =
@@ -493,7 +493,7 @@ datesInRange min max =
         go (addDay max) []
 
 
-groupDayContentByMonth : List DayContent -> List InternalMonth
+groupDayContentByMonth : List (DayContent a) -> List (InternalMonth a)
 groupDayContentByMonth content =
     let
         sortedByYear =
@@ -508,7 +508,7 @@ groupDayContentByMonth content =
         List.concat toInternalMonthList
 
 
-listToInternalMonth : List DayContent -> InternalMonth
+listToInternalMonth : List (DayContent a) -> (InternalMonth a)
 listToInternalMonth content =
     let
         contentDict =
@@ -522,7 +522,7 @@ listToInternalMonth content =
                 InternalMonth 2000 1 Dict.empty
 
 
-getMonthGridFromDates : List DayContent -> List DayContent
+getMonthGridFromDates : List (DayContent a) -> List (DayContent a)
 getMonthGridFromDates dates =
     let
         getGridXY list row acc =
@@ -545,7 +545,7 @@ getMonthGridFromDates dates =
         getGridXY dates 2 []
 
 
-updateContent : CalendarModel -> CalendarModel
+updateContent : (CalendarModel a) -> (CalendarModel a)
 updateContent model =
     let
         listOfMonths =
@@ -561,7 +561,7 @@ updateContent model =
         { model | months = Dict.fromList newListOfMonths }
 
 
-updateInternalMonthGrid : InternalMonth -> InternalMonth
+updateInternalMonthGrid : (InternalMonth a) -> (InternalMonth a)
 updateInternalMonthGrid month =
     let
         days =

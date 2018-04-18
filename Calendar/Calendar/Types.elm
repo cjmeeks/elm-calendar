@@ -38,15 +38,15 @@ import Mouse exposing (Position)
 
     The Internal calendar model
 -}
-type alias CalendarModel =
-    { months : Dict.Dict ( Int, Int ) InternalMonth
+type alias CalendarModel a =
+    { months : Dict.Dict ( Int, Int ) (InternalMonth a)
     , currentDate : Maybe TDate.Date
     , currentMonth : Int
     , currentYear : Int
     , drag : Maybe Drag
-    , movingContent : Maybe DayContent
+    , movingContent : Maybe (DayContent a)
     , size : Window.Size
-    , config : Config
+    , config : (Config a)
     }
 
 
@@ -64,19 +64,19 @@ type alias Drag =
 
 {-| Config for library
 -}
-type alias Config =
+type alias Config a =
     { customHeader : Bool
     , customButtons : Bool
-    , customStuff : CustomStuff
+    , customStuff : (CustomStuff a)
     , toggleDragging : Bool
     }
 
 
 {-| Custom type for user custom html
 -}
-type alias CustomStuff =
-    { forwardButton : Html CalendarMsg
-    , backButton : Html CalendarMsg
+type alias CustomStuff a =
+    { forwardButton : Html a
+    , backButton : Html a
     , headerFormat : String
     }
 
@@ -86,12 +86,13 @@ MovedItem is exposed so that you can subscribe to it and update your side of thi
 You will have to have a msg that is msg CalendarDate CalendarDate
 MovedItem FromDate ToDate
 -}
-type CalendarMsg
-    = RecieveDate Date.Date
+type CalendarMsg a = 
+    RecieveDate Date.Date
     | MonthForward
     | MonthBackward
-    | Drags DragMsg
+    | Drags (DragMsg a)
     | Resize Window.Size
+    | CustomMsg a
     | DoNothing
 
 
@@ -117,18 +118,18 @@ type alias MovedDates =
 
     Export DragEnd to determine when something has moved
 -}
-type DragMsg
-    = DragStart Int Int DayContent Position
+type DragMsg a =
+     DragStart Int Int (DayContent a) Position
     | DragAt Position
     | DragEnd Position
 
 
 {-| Data related to each Day
 -}
-type alias DayContent =
+type alias DayContent a =
     { dayIndex : Int
     , weekIndex : Int
-    , content : Html CalendarMsg
+    , content : Html a
     , theDate : TDate.Date
     }
 
@@ -137,8 +138,8 @@ type alias DayContent =
 
     key of days is (year,month,day)
 -}
-type alias InternalMonth =
+type alias InternalMonth a =
     { month : Int
     , year : Int
-    , days : Dict.Dict ( Int, Int, Int ) DayContent
+    , days : Dict.Dict ( Int, Int, Int ) (DayContent a)
     }

@@ -61,12 +61,11 @@ import Calendar.Styles exposing (..)
 
 
 --TODO
--- make config have toggle drag and drop
 -- make config have default window sizing or have custom div size -> stretch
 -- have a way for user to see which content was moved to update their stuff
 
 
-initConfig : Config
+initConfig : (Config a)
 initConfig =
     { customHeader = False
     , customButtons = False
@@ -79,7 +78,7 @@ initConfig =
 
     turnOnCustomButtons
 -}
-turnOnCustomButtons : CalendarModel -> CalendarModel
+turnOnCustomButtons : (CalendarModel a) -> (CalendarModel a)
 turnOnCustomButtons model =
     let
         config =
@@ -95,7 +94,7 @@ turnOnCustomButtons model =
 
     turnOffCustomButtons
 -}
-turnOffCustomButtons : CalendarModel -> CalendarModel
+turnOffCustomButtons : (CalendarModel a) -> (CalendarModel a)
 turnOffCustomButtons model =
     let
         config =
@@ -111,7 +110,7 @@ turnOffCustomButtons model =
 
     turnOnCustomButtons
 -}
-turnOnDragging : CalendarModel -> CalendarModel
+turnOnDragging : (CalendarModel a) -> (CalendarModel a)
 turnOnDragging model =
     let
         config =
@@ -127,7 +126,7 @@ turnOnDragging model =
 
     turnOffCustomButtons
 -}
-turnOffDragging : CalendarModel -> CalendarModel
+turnOffDragging : (CalendarModel a) -> (CalendarModel a)
 turnOffDragging model =
     let
         config =
@@ -143,7 +142,7 @@ turnOffDragging model =
 
     turnOffDefaultHeader
 -}
-turnOffDefaultHeader : CalendarModel -> CalendarModel
+turnOffDefaultHeader : (CalendarModel a) -> (CalendarModel a)
 turnOffDefaultHeader model =
     let
         config =
@@ -155,7 +154,7 @@ turnOffDefaultHeader model =
         { model | config = newConfig }
 
 
-initCustomStuff : CustomStuff
+initCustomStuff : (CustomStuff a)
 initCustomStuff =
     { forwardButton = div [] []
     , backButton = div [] []
@@ -167,7 +166,7 @@ initCustomStuff =
 
     setCustomForwardButton
 -}
-setCustomForwardButton : Html CalendarMsg -> CalendarModel -> CalendarModel
+setCustomForwardButton : Html a -> (CalendarModel a) -> (CalendarModel a)
 setCustomForwardButton btn model =
     let
         config =
@@ -189,7 +188,7 @@ setCustomForwardButton btn model =
 
     setCustomBackButton
 -}
-setCustomBackButton : Html CalendarMsg -> CalendarModel -> CalendarModel
+setCustomBackButton : Html a -> (CalendarModel a) -> (CalendarModel a)
 setCustomBackButton btn model =
     let
         config =
@@ -212,7 +211,7 @@ setCustomBackButton btn model =
     The daycontent
     pass in msg type of your html
 -}
-initCalendarModel : ( CalendarModel, Cmd CalendarMsg )
+initCalendarModel : ( (CalendarModel a), Cmd (CalendarMsg a) )
 initCalendarModel =
     ( CalendarModel Dict.empty Nothing 0 0 Nothing Nothing (Window.Size 0 0) initConfig, Cmd.batch [ Date.now |> Task.perform RecieveDate, Task.perform (\x -> Resize x) Window.size ] )
 
@@ -221,7 +220,7 @@ initCalendarModel =
 
     subscriptions : Calendar Subscriptions
 -}
-subscriptions : CalendarModel -> Sub CalendarMsg
+subscriptions : (CalendarModel a) -> Sub (CalendarMsg a)
 subscriptions model =
     let
         dragSub =
@@ -244,7 +243,7 @@ subscriptions model =
 -}
 
 
-initWithDayContent : List DayContent -> CalendarModel
+initWithDayContent : List (DayContent a) -> (CalendarModel a)
 initWithDayContent list =
     let
         ( min, max ) =
@@ -267,7 +266,7 @@ initWithDayContent list =
     Calendar.view
 
 -}
-view : CalendarModel -> Html CalendarMsg
+view : (CalendarModel a) -> Html (CalendarMsg a)
 view model =
     let
         dates =
@@ -328,7 +327,7 @@ view model =
                         , gridAccess 1 1
                         , class "calendar-header-back-button"
                         ]
-                        [ backButton ]
+                        [ Html.map CustomMsg backButton ]
                     , h1
                         [ calendarHeader
                         , gridAccess 1 2
@@ -340,7 +339,7 @@ view model =
                         , gridAccess 1 3
                         , class "calendar-header-forward-button"
                         ]
-                        [ forwardButton ]
+                        [ Html.map CustomMsg forwardButton ]
                     ]
                 ]
                 monthContent
@@ -351,7 +350,7 @@ view model =
     Calendar.update
 
 -}
-update : CalendarMsg -> CalendarModel -> ( CalendarModel, Cmd CalendarMsg )
+update : (CalendarMsg a) -> (CalendarModel a) -> ( (CalendarModel a), Cmd (CalendarMsg a) )
 update msg model =
     case msg of
         RecieveDate rDate ->
@@ -416,6 +415,9 @@ update msg model =
 
         Resize newSize ->
             { model | size = newSize } ! []
+        
+        CustomMsg m ->
+            model ! []
 
         DoNothing ->
             model ! []
@@ -423,7 +425,7 @@ update msg model =
 
 {-| Catch the from date and to date of the moved content for use by the user
 -}
-catchToAndFromDates : CalendarMsg -> CalendarModel -> Maybe MovedDates
+catchToAndFromDates : (CalendarMsg a) -> (CalendarModel a) -> Maybe MovedDates
 catchToAndFromDates msg model =
     case msg of
         Drags dMsg ->
@@ -458,7 +460,7 @@ listOfMonthInts =
 
 {-| Takes a list of day content and sets that as the calendar content
 -}
-setDayContent : List ( CalendarDate, Html CalendarMsg ) -> CalendarModel -> CalendarModel
+setDayContent : List ( CalendarDate, Html a ) -> (CalendarModel a) -> (CalendarModel a)
 setDayContent days model =
     let
         ( min, max ) =
@@ -501,7 +503,7 @@ setDayContent days model =
 
 {-| Takes a tuple of (year, month, date) and Html content corresponding to that date
 -}
-addDayContent : ( Int, Int, Int ) -> Html CalendarMsg -> CalendarModel -> CalendarModel
+addDayContent : ( Int, Int, Int ) -> Html a -> (CalendarModel a) -> (CalendarModel a)
 addDayContent ( year, month, day ) content model =
     let
         getMonth =
@@ -531,7 +533,7 @@ addDayContent ( year, month, day ) content model =
 
 {-| Takes a tuple of (year, month, date) to be deleted
 -}
-deleteDayContent : ( Int, Int, Int ) -> CalendarModel -> CalendarModel
+deleteDayContent : ( Int, Int, Int ) -> (CalendarModel a) -> (CalendarModel a)
 deleteDayContent ( year, month, day ) model =
     let
         newMonth =
