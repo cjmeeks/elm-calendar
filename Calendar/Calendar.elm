@@ -1,4 +1,17 @@
-module Calendar exposing (CalendarMsg, DayContent, Model, initCalendarModel, update, view, dateToString)
+module Calendar
+    exposing
+        ( initCalendarModel
+        , update
+        , view
+        , setDayContent
+        , subscriptions
+        , turnOnCustomButtons
+        , setCustomForwardButton
+        , setCustomBackButton
+        , addDayContent
+        , deleteDayContent
+        , catchToAndFromDates
+        )
 
 {-| This library is for a drag and drop calendar
 
@@ -13,21 +26,22 @@ module Calendar exposing (CalendarMsg, DayContent, Model, initCalendarModel, upd
 @docs update
 
 
+# subscriptions
+
+@docs subscriptions
+
+
 # model
 
-@docs Model
-@docs DayContent
+@docs initCalendarModel
 
 
 # functions
 
-@docs initCalendarModel
-@docs dateToString
+Inits and setters for customizing the html
 
-
-# types
-
-@docs CalendarMsg
+@docs setDayContent, setCustomForwardButton, setCustomBackButton, turnOnCustomButtons, addDayContent, deleteDayContent
+@docs catchToAndFromDates
 
 -}
 
@@ -35,29 +49,161 @@ import Date
 import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Attributes as Attrs
+import Html.Events exposing (..)
 import Task exposing (..)
 import Time.Date as TDate exposing (..)
-import Set
-import List.Extra
+import Mouse exposing (Position)
+import Window exposing (..)
+import Calendar.Internal exposing (..)
+import Calendar.Types exposing (..)
+import Calendar.Styles exposing (..)
+
+
+--TODO
+-- make config have default window sizing or have custom div size -> stretch
+-- have a way for user to see which content was moved to update their stuff
+
+
+initConfig : (Config a)
+initConfig =
+    { customHeader = False
+    , customButtons = False
+    , customStuff = initCustomStuff
+    , toggleDragging = True
+    }
 
 
 {-|
 
-    The model
-    pass in msg type of your html
-    content is a dictionary of key: (Year, Month) to Value : Internal Month
+    turnOnCustomButtons
 -}
-type alias Model =
-    { content : Dict.Dict String DayContent
-    , newContent : Dict.Dict (Int, Int) InternalMonth
-    , currentDate : Maybe TDate.Date
+turnOnCustomButtons : (CalendarModel a) -> (CalendarModel a)
+turnOnCustomButtons model =
+    let
+        config =
+            model.config
+
+        newConfig =
+            { config | customButtons = True }
+    in
+        { model | config = newConfig }
+
+
+{-|
+
+    turnOffCustomButtons
+-}
+turnOffCustomButtons : (CalendarModel a) -> (CalendarModel a)
+turnOffCustomButtons model =
+    let
+        config =
+            model.config
+
+        newConfig =
+            { config | customButtons = False }
+    in
+        { model | config = newConfig }
+
+
+{-|
+
+    turnOnCustomButtons
+-}
+turnOnDragging : (CalendarModel a) -> (CalendarModel a)
+turnOnDragging model =
+    let
+        config =
+            model.config
+
+        newConfig =
+            { config | toggleDragging = True }
+    in
+        { model | config = newConfig }
+
+
+{-|
+
+    turnOffCustomButtons
+-}
+turnOffDragging : (CalendarModel a) -> (CalendarModel a)
+turnOffDragging model =
+    let
+        config =
+            model.config
+
+        newConfig =
+            { config | toggleDragging = False }
+    in
+        { model | config = newConfig }
+
+
+{-|
+
+    turnOffDefaultHeader
+-}
+turnOffDefaultHeader : (CalendarModel a) -> (CalendarModel a)
+turnOffDefaultHeader model =
+    let
+        config =
+            model.config
+
+        newConfig =
+            { config | customHeader = True }
+    in
+        { model | config = newConfig }
+
+
+initCustomStuff : (CustomStuff a)
+initCustomStuff =
+    { forwardButton = div [] []
+    , backButton = div [] []
+    , headerFormat = ""
     }
 
 
-{-| calendar msg
+{-|
+
+    setCustomForwardButton
 -}
-type CalendarMsg
-    = RecieveDate Date.Date
+setCustomForwardButton : Html a -> (CalendarModel a) -> (CalendarModel a)
+setCustomForwardButton btn model =
+    let
+        config =
+            model.config
+
+        custom =
+            config.customStuff
+
+        newButtons =
+            { custom | forwardButton = btn }
+
+        newConfig =
+            { config | customButtons = True, customStuff = newButtons }
+    in
+        { model | config = newConfig }
+
+
+{-|
+
+    setCustomBackButton
+-}
+setCustomBackButton : Html a -> (CalendarModel a) -> (CalendarModel a)
+setCustomBackButton btn model =
+    let
+        config =
+            model.config
+
+        custom =
+            config.customStuff
+
+        newButtons =
+            { custom | backButton = btn }
+
+        newConfig =
+            { config | customButtons = True, customStuff = newButtons }
+    in
+        { model | config = newConfig }
 
 
 {-|
@@ -65,29 +211,30 @@ type CalendarMsg
     The daycontent
     pass in msg type of your html
 -}
-type alias DayContent =
-    { dayIndex : Int
-    , weekIndex : Int
-    , content : Html Never
-    , theDate : TDate.Date
-    }
-
-
-type alias InternalMonth =
-    { month : Int
-    , year : Int
-    , days : Dict.Dict ( Int, Int, Int ) DayContent
-    }
+initCalendarModel : ( (CalendarModel a), Cmd (CalendarMsg a) )
+initCalendarModel =
+    ( CalendarModel Dict.empty Nothing 0 0 Nothing Nothing (Window.Size 0 0) initConfig, Cmd.batch [ Date.now |> Task.perform RecieveDate, Task.perform (\x -> Resize x) Window.size ] )
 
 
 {-|
 
-    The daycontent
-    pass in msg type of your html
+    subscriptions : Calendar Subscriptions
 -}
-initCalendarModel : Html CalendarMsg -> ( Model, Cmd CalendarMsg )
-initCalendarModel defaultHtml =
-    ( Model Dict.empty Dict.empty Nothing, Date.now |> Task.perform RecieveDate )
+subscriptions : (CalendarModel a) -> Sub (CalendarMsg a)
+subscriptions model =
+    let
+        dragSub =
+            case model.drag of
+                Nothing ->
+                    Sub.none
+
+                Just _ ->
+                    if model.config.toggleDragging then
+                        Sub.map Drags <| Sub.batch [ Mouse.moves DragAt, Mouse.ups DragEnd ]
+                    else
+                        Sub.none
+    in
+        Sub.batch [ Window.resizes Resize, dragSub ]
 
 
 
@@ -96,7 +243,7 @@ initCalendarModel defaultHtml =
 -}
 
 
-initWithDayContent : List DayContent -> Model
+initWithDayContent : List (DayContent a) -> (CalendarModel a)
 initWithDayContent list =
     let
         ( min, max ) =
@@ -108,42 +255,10 @@ initWithDayContent list =
         datesList =
             List.map initDayContentFromDate dates
 
-        mymap dateRange myList acc =
-            case ( dateRange, myList ) of
-                ( d :: dli, m :: mli ) ->
-                    let
-                        dDate =
-                            TDate.toTuple d.theDate
-
-                        mDate =
-                            TDate.toTuple m.theDate
-                    in
-                        if dDate == mDate then
-                            mymap dli mli <| List.append acc [ m ]
-                        else
-                            mymap dli myList <| List.append acc [ d ]
-
-                ( [], m :: mli ) ->
-                    mymap [] mli <| List.append acc [ m ]
-
-                ( d :: dli, [] ) ->
-                    mymap dli [] <| List.append acc [ d ]
-
-                ( [], [] ) ->
-                    mymap dateRange myList acc
-
         combined =
-            mymap datesList list []
-
-        temp =
-            Debug.log "list" combined
+            combineDateRangeWithListOfDayContent datesList list []
     in
-        Model Dict.empty Dict.empty Nothing
-
-
-initDayContentFromDate : Date -> DayContent
-initDayContentFromDate d =
-    DayContent 0 0 (text "") d
+        CalendarModel Dict.empty Nothing 0 0 Nothing Nothing (Window.Size 0 0) initConfig
 
 
 {-| Displays the Calendar
@@ -151,33 +266,83 @@ initDayContentFromDate d =
     Calendar.view
 
 -}
-view : Model -> Html CalendarMsg
+view : (CalendarModel a) -> Html (CalendarMsg a)
 view model =
     let
         dates =
             datesInRange (date 2018 1 1) (date 2018 1 31)
 
-        -- indexed =
-        --     getMonthGridFromDates dates
+        getMonth =
+            Dict.get ( model.currentYear, model.currentMonth ) model.months
+
+        monthContent =
+            case getMonth of
+                Just item ->
+                    viewMonth model item
+
+                Nothing ->
+                    [ text "There was an Error" ]
+
+        listOfMonths =
+            List.map Tuple.second <|
+                Dict.toList model.months
+
+        firstDateInContent =
+            case List.head listOfMonths of
+                Just m ->
+                    ( m.year, m.month )
+
+                Nothing ->
+                    ( 2000, 1 )
+
+        ( curYear, curMonth, curDay ) =
+            case model.currentDate of
+                Just d ->
+                    TDate.toTuple d
+
+                Nothing ->
+                    ( 2000, 1, 1 )
+
+        forwardButton =
+            if model.config.customButtons then
+                model.config.customStuff.forwardButton
+            else
+                div [ headerButton ] [ text ">>" ]
+
+        backButton =
+            if model.config.customButtons then
+                model.config.customStuff.backButton
+            else
+                div [ headerButton ] [ text "<<" ]
     in
-        div [ calendarGrid ] <|
-            -- List.append
-            [ div
-                [ gridAccessSpanCol 1 7 1 ]
-                [ h1 [ calendarHeader ]
-                    [ text "CALENDAR!!" ]
+        div [ calendarGrid, class "calendar-container" ] <|
+            List.append
+                [ div
+                    [ gridAccessSpanCol 1 7 1
+                    , headerGrid
+                    , class "calendar-header-container"
+                    ]
+                    [ div
+                        [ onClick MonthBackward
+                        , gridAccess 1 1
+                        , class "calendar-header-back-button"
+                        ]
+                        [ Html.map CustomMsg backButton ]
+                    , h1
+                        [ calendarHeader
+                        , gridAccess 1 2
+                        , class "calendar-header-title"
+                        ]
+                        [ text <| monthToString model.currentMonth ]
+                    , div
+                        [ onClick MonthForward
+                        , gridAccess 1 3
+                        , class "calendar-header-forward-button"
+                        ]
+                        [ Html.map CustomMsg forwardButton ]
+                    ]
                 ]
-            ]
-
-
-
--- <|
--- viewMonthFromList indexed
-
-
-viewMonthFromList : List ( ( Int, Int ), Date ) -> List (Html CalendarMsg)
-viewMonthFromList list =
-    List.map (\( ( x, y ), d ) -> div [ gridAccess y x, gridItem ] [ text <| TDate.toISO8601 d ]) list
+                monthContent
 
 
 {-| updates the Calendar
@@ -185,115 +350,103 @@ viewMonthFromList list =
     Calendar.update
 
 -}
-update : CalendarMsg -> Model -> ( Model, Cmd CalendarMsg )
+update : (CalendarMsg a) -> (CalendarModel a) -> ( (CalendarModel a), Cmd (CalendarMsg a) )
 update msg model =
     case msg of
         RecieveDate rDate ->
-            ( { model | currentDate = Just (date (Date.year rDate) (getMonthInt (Date.month rDate)) (Date.day rDate)) }, Cmd.none )
+            let
+                ( monthInt, yearInt ) =
+                    ( getMonthInt (Date.month rDate), Date.year rDate )
+
+                newMonths =
+                    case Dict.get ( yearInt, monthInt ) model.months of
+                        Just _ ->
+                            model.months
+
+                        Nothing ->
+                            Dict.insert ( yearInt, monthInt ) (insertDumbyMonth yearInt monthInt) model.months
+            in
+                { model
+                    | currentDate = Just (date (Date.year rDate) monthInt (Date.day rDate))
+                    , currentMonth = monthInt
+                    , currentYear = yearInt
+                    , months = newMonths
+                }
+                    ! []
+
+        MonthForward ->
+            let
+                ( newMonth, newYear ) =
+                    if model.currentMonth == 12 then
+                        ( 1, model.currentYear + 1 )
+                    else
+                        ( model.currentMonth + 1, model.currentYear )
+
+                updatedContent =
+                    case Dict.get ( newYear, newMonth ) model.months of
+                        Just m ->
+                            model.months
+
+                        Nothing ->
+                            Dict.insert ( newYear, newMonth ) (insertDumbyMonth newYear newMonth) model.months
+            in
+                { model | currentMonth = newMonth, currentYear = newYear, months = updatedContent } ! []
+
+        MonthBackward ->
+            let
+                ( newMonth, newYear ) =
+                    if model.currentMonth == 1 then
+                        ( 12, model.currentYear - 1 )
+                    else
+                        ( model.currentMonth - 1, model.currentYear )
+
+                updatedContent =
+                    case Dict.get ( newYear, newMonth ) model.months of
+                        Just m ->
+                            model.months
+
+                        Nothing ->
+                            Dict.insert ( newYear, newMonth ) (insertDumbyMonth newYear newMonth) model.months
+            in
+                { model | currentMonth = newMonth, currentYear = newYear, months = updatedContent } ! []
+
+        Drags msg_ ->
+            updateDrags msg_ model
+
+        Resize newSize ->
+            { model | size = newSize } ! []
+        
+        CustomMsg m ->
+            model ! []
+
+        DoNothing ->
+            model ! []
 
 
-{-|
-
-    converts a date to a string
+{-| Catch the from date and to date of the moved content for use by the user
 -}
-dateToString :
-    Date
-    -> String --maybe make internal rich type for this string
-dateToString date =
-    String.join " " [ toString <| TDate.month date, toString <| TDate.day date, toString <| TDate.year date ]
+catchToAndFromDates : (CalendarMsg a) -> (CalendarModel a) -> Maybe MovedDates
+catchToAndFromDates msg model =
+    case msg of
+        Drags dMsg ->
+            case dMsg of
+                DragEnd pos ->
+                    let
+                        ( toDate, fromDate ) =
+                            getFromAndToDates pos model
+                    in
+                        case ( toDate, fromDate ) of
+                            ( Just toCalendarDate, Just fromCalendarDate ) ->
+                                Just <| MovedDates toCalendarDate fromCalendarDate
 
+                            _ ->
+                                Nothing
 
-getMinAndMaxDate : List Date -> ( Date, Date )
-getMinAndMaxDate dates =
-    let
-        newDates =
-            List.map toTuple dates
+                _ ->
+                    Nothing
 
-        maxDate =
-            if List.length newDates >= 2 then
-                case List.maximum newDates of
-                    Just ( y, m, d ) ->
-                        date y m d
-
-                    Nothing ->
-                        date 2018 12 31
-            else
-                date 2018 12 31
-
-        minDate =
-            if List.length newDates >= 2 then
-                case List.minimum newDates of
-                    Just ( y, m, d ) ->
-                        date y m d
-
-                    Nothing ->
-                        date 2018 1 1
-            else
-                date 2018 1 1
-
-        minMonthDate =
-            date (year minDate) (month minDate) 1
-
-        maxMonthDate =
-            date (year maxDate) (month maxDate) (daysInMonth (year maxDate) (month maxDate))
-    in
-        ( minMonthDate, maxMonthDate )
-
-
-
-{- STYLES
- -}
-
-
-gridAccess : Int -> Int -> Attribute msg
-gridAccess row col =
-    style
-        [ ( "grid-row", toString row )
-        , ( "grid-column", toString col )
-        ]
-
-
-gridItem : Attribute msg
-gridItem =
-    style
-        [ ( "border-style", "solid" )
-        , ( "border-width", "2px" )
-        ]
-
-
-gridAccessSpanRow : Int -> Int -> Int -> Attribute msg
-gridAccessSpanRow row span col =
-    style
-        [ ( "grid-row", toString row ++ " / " ++ "span " ++ toString span )
-        , ( "grid-column", toString col )
-        ]
-
-
-gridAccessSpanCol : Int -> Int -> Int -> Attribute msg
-gridAccessSpanCol row span col =
-    style
-        [ ( "grid-row", toString row )
-        , ( "grid-column", toString col ++ " / " ++ "span " ++ toString span )
-        ]
-
-
-calendarGrid : Attribute msg
-calendarGrid =
-    style
-        [ ( "display", "grid" )
-        , ( "height", "100%" )
-        , ( "width", "100%" )
-        , ( "grid-template-rows", "5% 19% 19% 19% 19% 19%" )
-        , ( "grid-template-columns", "14.2% 14.2% 14.2% 14.2% 14.2% 14.2%" )
-        ]
-
-
-calendarHeader : Attribute msg
-calendarHeader =
-    style
-        [ ( "margin", "0px" )
-        , ( "text-align", "center" )
-        ]
+        _ ->
+            Nothing
 
 
 
@@ -305,381 +458,97 @@ listOfMonthInts =
     [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ]
 
 
-
---TODO make this do dict int (internal month)
--- setters
-
-groupDayContentByMonth : List DayContent -> List InternalMonth
-groupDayContentByMonth content =
+{-| Takes a list of day content and sets that as the calendar content
+-}
+setDayContent : List ( CalendarDate, Html a ) -> (CalendarModel a) -> (CalendarModel a)
+setDayContent days model =
     let
-        sortedByYear =
-            List.Extra.groupWhile (\x y -> TDate.year x.theDate == TDate.year y.theDate) content
+        ( min, max ) =
+            getMinAndMaxDate <| List.map (\( CalendarDate ( year, month, d ), h ) -> TDate.date year month d) days
 
-        sortedByMonth =
-            List.map (\x -> List.Extra.groupWhile (\y z -> TDate.month y.theDate == TDate.month z.theDate) x) sortedByYear
+        dates =
+            datesInRange min max
 
-        toInternalMonthList = List.map (\x -> List.map listToInternalMonth x)  sortedByMonth
+        datesList =
+            List.map initDayContentFromDate dates
+
+        daysList =
+            List.sortWith (\t1 t2 -> TDate.compare t1.theDate t2.theDate) <| List.map (\( CalendarDate ( year, month, d ), c ) -> DayContent 0 0 c (TDate.date year month d)) days
+
+        combined =
+            combineDateRangeWithListOfDayContent datesList daysList []
+
+        daysToInternalMonths =
+            groupDayContentByMonth combined
+
+        gridStuff =
+            List.map
+                (\x ->
+                    { x
+                        | days =
+                            Dict.fromList <|
+                                List.map (\y -> ( ( TDate.year y.theDate, TDate.month y.theDate, TDate.day y.theDate ), y )) <|
+                                    getMonthGridFromDates <|
+                                        List.map Tuple.second <|
+                                            Dict.toList x.days
+                    }
+                )
+                daysToInternalMonths
+
+        monthDict =
+            Dict.fromList <| List.map (\x -> ( ( x.year, x.month ), x )) gridStuff
     in
-        List.concat toInternalMonthList
+        { model | months = monthDict }
 
 
-listToInternalMonth : List DayContent -> InternalMonth
-listToInternalMonth content =
+{-| Takes a tuple of (year, month, date) and Html content corresponding to that date
+-}
+addDayContent : ( Int, Int, Int ) -> Html a -> (CalendarModel a) -> (CalendarModel a)
+addDayContent ( year, month, day ) content model =
     let
-        contentDict =
-            Dict.fromList <| List.map (\x -> ( (TDate.toTuple x.theDate), x )) content
+        getMonth =
+            case Dict.get ( year, month ) model.months of
+                Just m ->
+                    m
+
+                Nothing ->
+                    InternalMonth 0 0 Dict.empty
+
+        newMonthContent =
+            case Dict.get ( year, month, day ) getMonth.days of
+                Just d ->
+                    Dict.insert ( year, month, day ) { d | content = content } getMonth.days
+
+                Nothing ->
+                    Dict.insert ( year, month, day ) (DayContent 0 0 content (TDate.fromTuple ( year, month, day ))) getMonth.days
+
+        newMonth =
+            { getMonth | days = newMonthContent }
+
+        newModelContent =
+            Dict.insert ( year, month ) newMonth model.months
     in
-        case List.head content of
-            Just item ->
-                (InternalMonth (TDate.year item.theDate) (TDate.month item.theDate) contentDict)
-
-            Nothing ->
-                InternalMonth 2000 1 Dict.empty
+        { model | months = newModelContent }
 
 
-
---List Date -> ((x,y), Date) map that
--- Recurcive function
--- gets a list of daycontent which will generally be given as a month at a time and updates their day and week indexes for the grid
--- make this take in internal month
-
-
-getMonthGridFromDates : List DayContent -> List DayContent
-getMonthGridFromDates dates =
+{-| Takes a tuple of (year, month, date) to be deleted
+-}
+deleteDayContent : ( Int, Int, Int ) -> (CalendarModel a) -> (CalendarModel a)
+deleteDayContent ( year, month, day ) model =
     let
-        getGridXY list row acc =
-            case list of
-                d :: li ->
+        newMonth =
+            case Dict.get ( year, month ) model.months of
+                Just m ->
                     let
-                        xPos =
-                            dayToGridxPosition (TDate.weekday d.theDate)
+                        newDays =
+                            Dict.remove ( year, month, day ) m.days
                     in
-                        if xPos == 99 then
-                            getGridXY li row acc
-                        else if xPos == 7 then
-                            getGridXY li (row + 1) (List.append acc [ { d | dayIndex = xPos, weekIndex = row } ])
-                        else
-                            getGridXY li row (List.append acc [ { d | dayIndex = xPos, weekIndex = row } ])
-
-                [] ->
-                    acc
-    in
-        getGridXY dates 2 []
-
-
-dayToGridxPosition : Weekday -> Int
-dayToGridxPosition weekd =
-    case weekd of
-        Mon ->
-            2
-
-        Tue ->
-            3
-
-        Wed ->
-            4
-
-        Thu ->
-            5
-
-        Fri ->
-            6
-
-        Sat ->
-            7
-
-        Sun ->
-            1
-
-
-
---------------------------------------------------------------------------
-{- date functions adapted from goilluminate/elm-fancy-daterangepicker
-   https://github.com/GoIlluminate/elm-fancy-daterangepicker/blob/master/src/DateRangePicker/Date.elm
-   these are adapted to use elm-community/elm-time funtions and date type
--}
---------------------------------------------------------------------------
--- getMonthRange : Date -> Date -> List Date
--- getMonthRange min max =
---     datesInRange min (subDay max)
-
-
-{-| A function that gets all the dates between two dates (inclusive).
--}
-datesInRange : Date -> Date -> List Date
-datesInRange min max =
-    let
-        go x acc =
-            let
-                y =
-                    subDay x
-            in
-                if toTuple y == toTuple min then
-                    y :: acc
-                else
-                    go y (y :: acc)
-    in
-        go (addDay max) []
-
-
-{-| A function that takes a Date and returns the date representing the first of that month.
--}
-startOfMonth : Date -> Date
-startOfMonth dateIn =
-    date (year dateIn) (month dateIn) 1
-
-
-{-| A function that takes a Date and returns the date representing the end of that month.
--}
-endOfMonth : Date -> Date
-endOfMonth dateIn =
-    let
-        y =
-            year dateIn
-
-        m =
-            month dateIn
-
-        d =
-            case TDate.daysInMonth y m of
-                Just i ->
-                    i
+                        { m | days = newDays }
 
                 Nothing ->
-                    0
+                    InternalMonth 0 0 Dict.empty
+
+        newModelContent =
+            Dict.insert ( year, month ) newMonth model.months
     in
-        date y m d
-
-
-{-| A function that subtracts 1 day from the given date and returns it.
--}
-subDay : Date -> Date
-subDay dateIn =
-    let
-        monthNum =
-            month dateIn
-
-        yearNum =
-            year dateIn
-
-        dayNum =
-            day dateIn - 1
-
-        pred =
-            predMonth monthNum
-
-        predYear =
-            if pred == 12 then
-                yearNum - 1
-            else
-                yearNum
-
-        predDay =
-            case TDate.daysInMonth predYear pred of
-                Just i ->
-                    i
-
-                Nothing ->
-                    0
-    in
-        if dayNum < 1 then
-            date predYear pred predDay
-        else
-            date yearNum monthNum dayNum
-
-
-{-| A function that adds 1 day to the given date and returns it.
--}
-addDay : Date -> Date
-addDay dateIn =
-    let
-        monthNum =
-            month dateIn
-
-        yearNum =
-            year dateIn
-
-        dim =
-            case TDate.daysInMonth yearNum monthNum of
-                Just i ->
-                    i
-
-                Nothing ->
-                    0
-
-        dayNum =
-            day dateIn + 1
-
-        succ =
-            succMonth monthNum
-
-        succYear =
-            if succ == 1 then
-                yearNum + 1
-            else
-                yearNum
-    in
-        if dayNum > dim then
-            date succYear succ 1
-        else
-            date yearNum monthNum dayNum
-
-
-getMonthInt : Date.Month -> Int
-getMonthInt d =
-    case d of
-        Date.Jan ->
-            1
-
-        Date.Feb ->
-            2
-
-        Date.Mar ->
-            3
-
-        Date.Apr ->
-            4
-
-        Date.May ->
-            5
-
-        Date.Jun ->
-            6
-
-        Date.Jul ->
-            7
-
-        Date.Aug ->
-            8
-
-        Date.Sep ->
-            9
-
-        Date.Oct ->
-            10
-
-        Date.Nov ->
-            11
-
-        Date.Dec ->
-            12
-
-
-monthFromInt : Int -> Date.Month
-monthFromInt d =
-    case d of
-        1 ->
-            Date.Jan
-
-        2 ->
-            Date.Feb
-
-        3 ->
-            Date.Mar
-
-        4 ->
-            Date.Apr
-
-        5 ->
-            Date.May
-
-        6 ->
-            Date.Jun
-
-        7 ->
-            Date.Jul
-
-        8 ->
-            Date.Aug
-
-        9 ->
-            Date.Sep
-
-        10 ->
-            Date.Oct
-
-        11 ->
-            Date.Nov
-
-        12 ->
-            Date.Dec
-
-        _ ->
-            Date.Jan
-
-
-{-| An opaque function to determine whether a given year is a leap year.
--}
-isLeapYear : Int -> Bool
-isLeapYear y =
-    y % 400 == 0 || y % 100 /= 0 && y % 4 == 0
-
-
-{-| An opaque function returning the next month.
--}
-succMonth : Int -> Int
-succMonth month =
-    month
-        |> flip rem 12
-        |> (+) 1
-
-
-{-| An opaque function returning the previous month.
--}
-predMonth : Int -> Int
-predMonth month =
-    let
-        prev =
-            (month - 1)
-                |> flip rem 12
-    in
-        if prev == 0 then
-            12
-        else
-            prev
-
-
-daysInMonth : Int -> Int -> Int
-daysInMonth year month =
-    case month of
-        1 ->
-            31
-
-        2 ->
-            if isLeapYear year then
-                29
-            else
-                28
-
-        3 ->
-            31
-
-        4 ->
-            30
-
-        5 ->
-            31
-
-        6 ->
-            30
-
-        7 ->
-            31
-
-        8 ->
-            31
-
-        9 ->
-            30
-
-        10 ->
-            31
-
-        11 ->
-            30
-
-        12 ->
-            31
-
-        _ ->
-            31
+        { model | months = newModelContent }
