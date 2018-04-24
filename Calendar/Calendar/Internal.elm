@@ -202,7 +202,7 @@ moveItem fromPosX offsetX fromPosY offsetY model =
                                         ( listToInternalMonth <|
                                             Dict.values <|
                                                 Dict.insert ( moved.dayIndex, moved.weekIndex ) { item | dayIndex = moved.dayIndex, weekIndex = moved.weekIndex, theDate = moved.theDate } <|
-                                                    Dict.insert ( newX, newY ) { moved | dayIndex = newX, weekIndex = newY, theDate = item.theDate } indexedMonthContent
+                                                    Dict.insert ( newX, newY ) { moved | dayIndex = newX, weekIndex = newY-1, theDate = item.theDate } indexedMonthContent
                                         , Just <| TDate.toTuple item.theDate
                                         , Just <| TDate.toTuple moved.theDate
                                         )
