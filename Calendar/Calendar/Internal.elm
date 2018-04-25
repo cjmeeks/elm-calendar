@@ -67,7 +67,7 @@ viewDayContent idx idy dayContent model =
             h3 [ defaultHeaderStyle ] [ text <| dateToString dayContent.theDate ]
 
         innerHtml =
-            if model.config.customHeader then
+            if model.config.customDayHeader then
                 [ dayContentHtml ]
             else
                 [ defaultHeader
@@ -119,13 +119,13 @@ updateDrags msg model =
                 Just { xIndex, startX, currentX, yIndex, startY, currentY } ->
                     let
                         headerSize =
-                            (toFloat model.size.height) * 0.05
+                            (toFloat (model.size.height - model.config.customHeaderHeight)) * 0.05
 
                         ySize =
                             (toFloat model.size.height) - headerSize
 
                         calculateX =
-                            (toFloat model.size.width) / 7
+                            (toFloat (model.size.width - model.config.customSidebarWidth)) / 7
 
                         calculateY =
                             (ySize / 6)
@@ -202,7 +202,7 @@ moveItem fromPosX offsetX fromPosY offsetY model =
                                         ( listToInternalMonth <|
                                             Dict.values <|
                                                 Dict.insert ( moved.dayIndex, moved.weekIndex ) { item | dayIndex = moved.dayIndex, weekIndex = moved.weekIndex, theDate = moved.theDate } <|
-                                                    Dict.insert ( newX, newY ) { moved | dayIndex = newX, weekIndex = newY-1, theDate = item.theDate } indexedMonthContent
+                                                    Dict.insert ( newX, newY ) { moved | dayIndex = newX, weekIndex = newY - 1, theDate = item.theDate } indexedMonthContent
                                         , Just <| TDate.toTuple item.theDate
                                         , Just <| TDate.toTuple moved.theDate
                                         )

@@ -65,10 +65,12 @@ type alias Drag =
 {-| Config for library
 -}
 type alias Config a =
-    { customHeader : Bool
+    { customDayHeader : Bool
     , customButtons : Bool
     , customStuff : CustomStuff a
     , toggleDragging : Bool
+    , customHeaderHeight : Int
+    , customSidebarWidth : Int
     }
 
 

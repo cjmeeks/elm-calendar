@@ -42,11 +42,11 @@ gridAccessSpanCol row span col =
         ]
 
 
-calendarGrid : Attribute msg
-calendarGrid =
+calendarGrid : Int -> Attribute msg
+calendarGrid height =
     style
         [ ( "display", "grid" )
-        , ( "height", "100%" )
+        , ( "height", toString height ++ "px" )
         , ( "width", "100%" )
         , ( "grid-template-rows", "5% 19% 19% 19% 19% 19%" )
         , ( "grid-template-columns", "14.2% 14.2% 14.2% 14.2% 14.2% 14.2%" )

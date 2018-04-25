@@ -11,6 +11,8 @@ module Calendar
         , addDayContent
         , deleteDayContent
         , catchToAndFromDates
+        , setHeaderHeight
+        , setSidebarWidth
         )
 
 {-| This library is for a drag and drop calendar
@@ -41,7 +43,7 @@ module Calendar
 Inits and setters for customizing the html
 
 @docs setDayContent, setCustomForwardButton, setCustomBackButton, turnOnCustomButtons, addDayContent, deleteDayContent
-@docs catchToAndFromDates
+@docs catchToAndFromDates, setHeaderHeight, setSidebarWidth
 
 -}
 
@@ -67,10 +69,12 @@ import Calendar.Styles exposing (..)
 
 initConfig : Config a
 initConfig =
-    { customHeader = False
+    { customDayHeader = False
     , customButtons = False
     , customStuff = initCustomStuff
     , toggleDragging = True
+    , customHeaderHeight = 0
+    , customSidebarWidth = 0
     }
 
 
@@ -149,10 +153,39 @@ turnOffDefaultHeader model =
             model.config
 
         newConfig =
-            { config | customHeader = True }
+            { config | customDayHeader = True }
     in
         { model | config = newConfig }
 
+{-|
+
+    setHeaderHeight
+-}
+setHeaderHeight : Int -> CalendarModel a -> CalendarModel a
+setHeaderHeight height model =
+    let
+        config =
+            model.config
+
+        newConfig =
+            { config | customHeaderHeight = height }
+    in
+        { model | config = newConfig }
+
+{-|
+
+    setSidebarWidth
+-}
+setSidebarWidth : Int -> CalendarModel a -> CalendarModel a
+setSidebarWidth width model =
+    let
+        config =
+            model.config
+
+        newConfig =
+            { config | customSidebarWidth = width }
+    in
+        { model | config = newConfig }
 
 initCustomStuff : CustomStuff a
 initCustomStuff =
@@ -314,8 +347,10 @@ view model =
                 model.config.customStuff.backButton
             else
                 div [ headerButton ] [ text "<<" ]
+
+        heightOfDiv = model.size.height - model.config.customHeaderHeight
     in
-        div [ calendarGrid, class "calendar-container" ] <|
+        div [ calendarGrid heightOfDiv, class "calendar-container" ] <|
             List.append
                 [ div
                     [ gridAccessSpanCol 1 7 1

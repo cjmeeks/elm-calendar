@@ -20,9 +20,11 @@ main =
 
 
 type alias Model =
-    { calendarModel : (CalendarModel Msg)
-    , data : Dict.Dict (Int, Int, Int) MyData
+    { calendarModel : CalendarModel Msg
+    , data : Dict.Dict ( Int, Int, Int ) MyData
+    , sizeOfHeader : Int
     }
+
 
 type alias MyData =
     { textStuff : String
@@ -40,19 +42,32 @@ init =
     let
         ( cModel, cCmd ) =
             initCalendarModel
-        
-        testData = 
-            List.map (\((a,b,c), data) -> 
-                (CalendarDate (a,b,c), viewData (CalendarDate (a,b,c)) data)
-            ) testCase
-    in
-        ( Model (setDayContent testData cModel) <| Dict.fromList testCase , Cmd.map CMsg cCmd )
 
-generateDayContent : Dict.Dict (Int, Int, Int) MyData -> List (CalendarDate, Html Msg)
+        testData =
+            List.map
+                (\( ( a, b, c ), data ) ->
+                    ( CalendarDate ( a, b, c ), viewData (CalendarDate ( a, b, c )) data )
+                )
+                testCase
+
+        initModel =
+            Model (setDayContent testData cModel) (Dict.fromList testCase) 50
+
+        configStuff =
+            { initModel | calendarModel = Calendar.setHeaderHeight initModel.sizeOfHeader initModel.calendarModel }
+    in
+        ( configStuff, Cmd.map CMsg cCmd )
+
+
+generateDayContent : Dict.Dict ( Int, Int, Int ) MyData -> List ( CalendarDate, Html Msg )
 generateDayContent myData =
-    List.map (\((a,b,c), data) -> 
-                (CalendarDate (a,b,c), viewData (CalendarDate (a,b,c)) data)
-            ) <| Dict.toList myData
+    List.map
+        (\( ( a, b, c ), data ) ->
+            ( CalendarDate ( a, b, c ), viewData (CalendarDate ( a, b, c )) data )
+        )
+    <|
+        Dict.toList myData
+
 
 type Msg
     = CMsg (CalendarMsg Msg)
@@ -73,7 +88,7 @@ update msg model =
                     case cMsg of
                         CustomMsg customMsg ->
                             update customMsg { model | calendarModel = updatedCalendar }
-                    
+
                         _ ->
                             case Calendar.catchToAndFromDates cMsg model.calendarModel of
                                 Just dates ->
@@ -81,52 +96,79 @@ update msg model =
 
                                 Nothing ->
                                     { model | calendarModel = updatedCalendar } ! []
-                            
             in
                 ( updatedModel, Cmd.batch [ Cmd.map CMsg cCmd, cmds ] )
 
         ItemHasMoved to from ->
-                updateData to from model ! []
+            updateData to from model ! []
 
         Increment (CalendarDate key) ->
             case Dict.get key model.data of
                 Just d ->
                     let
-                        updatedData = Dict.insert key {d | count = d.count + 1} model.data
+                        updatedData =
+                            Dict.insert key { d | count = d.count + 1 } model.data
                     in
-                        { model | data = updatedData
-                                , calendarModel = setDayContent (generateDayContent updatedData) model.calendarModel
-                        } ! []
-                        
-            
+                        { model
+                            | data = updatedData
+                            , calendarModel = setDayContent (generateDayContent updatedData) model.calendarModel
+                        }
+                            ! []
+
                 Nothing ->
                     model ! []
-                    
 
         Decrement (CalendarDate key) ->
             case Dict.get key model.data of
                 Just d ->
                     let
-                        updatedData = Dict.insert key {d | count = d.count - 1} model.data
+                        updatedData =
+                            Dict.insert key { d | count = d.count - 1 } model.data
                     in
-                        { model | data = updatedData
-                                , calendarModel = setDayContent (generateDayContent updatedData) model.calendarModel
-                        } ! []
-                        
-            
+                        { model
+                            | data = updatedData
+                            , calendarModel = setDayContent (generateDayContent updatedData) model.calendarModel
+                        }
+                            ! []
+
                 Nothing ->
                     model ! []
 
+
 view : Model -> Html Msg
 view model =
-    Html.map CMsg <| Calendar.view model.calendarModel
+    div [ container ]
+        [ div [ customHeaderStyle model.sizeOfHeader ]
+            [ h1 [ style [ ( "margin", "0" ) ] ]
+                [ text "Nav bar goes here" ]
+            ]
+        , Html.map CMsg <| Calendar.view model.calendarModel
+        ]
+
+
+customHeaderStyle : Int -> Attribute msg
+customHeaderStyle size =
+    style
+        [ ( "border-style", "solid" )
+        , ( "border-width", "2px" )
+        , ( "height", toString size ++ "px" )
+        , ( "text-align", "center" )
+        , ( "margin", "0" )
+        ]
+
+
+container : Attribute msg
+container =
+    style
+        [ ( "height", "100%" )
+        ]
 
 
 viewData : CalendarDate -> MyData -> Html Msg
 viewData key data =
     div []
-        [ button [onClick (Increment key) ] [ text "+" ]
-        , button [onClick (Decrement key) ] [ text "-" ]
+        [ button [ onClick (Increment key) ] [ text "+" ]
+        , button [ onClick (Decrement key) ] [ text "-" ]
         , text <| "Count: " ++ (toString data.count)
         ]
 
@@ -134,31 +176,39 @@ viewData key data =
 updateData : CalendarDate -> CalendarDate -> Model -> Model
 updateData (CalendarDate to) (CalendarDate from) model =
     let
-        f = Dict.get from model.data
-        t = Dict.get to model.data
+        f =
+            Dict.get from model.data
+
+        t =
+            Dict.get to model.data
     in
-        case (f, t) of
-            (Just fromData, Just toData) ->
+        case ( f, t ) of
+            ( Just fromData, Just toData ) ->
                 let
-                    newData = Dict.insert to fromData <| Dict.insert from toData model.data
-                    newCalendarModel = setDayContent (generateDayContent newData) model.calendarModel
+                    newData =
+                        Dict.insert to fromData <| Dict.insert from toData model.data
+
+                    newCalendarModel =
+                        setDayContent (generateDayContent newData) model.calendarModel
                 in
-                    { model | data = newData
-                    , calendarModel = newCalendarModel
+                    { model
+                        | data = newData
+                        , calendarModel = newCalendarModel
                     }
-        
-            (Just fromData, Nothing) ->
+
+            ( Just fromData, Nothing ) ->
                 let
-                    newData = Dict.remove from <| Dict.insert to fromData model.data 
+                    newData =
+                        Dict.remove from <| Dict.insert to fromData model.data
                 in
-                { model | data = newData
+                    { model
+                        | data = newData
                         , calendarModel = setDayContent (generateDayContent newData) model.calendarModel
-                }
+                    }
+
             _ ->
                 model
-                
-        
-            
+
 
 testCustomForwardButton =
     div [] [ text "Forward" ]
@@ -168,12 +218,12 @@ testCustomBackButton =
     div [] [ text "Back" ]
 
 
-testCase : List ( (Int, Int, Int), MyData )
+testCase : List ( ( Int, Int, Int ), MyData )
 testCase =
     [ ( ( 2018, 4, 1 ), MyData "Test Click" 0 )
-    , (  ( 2018, 4, 20 ), MyData "Test Click" 0)
-    , (  ( 2018, 4, 2 ), MyData "Test Click" 0)
-    , (  ( 2018, 4, 14 ), MyData "Test Click" 0)
-    , (  ( 2018, 4, 23 ), MyData "Test Click" 0)
-    , (  ( 2018, 4, 10 ), MyData "Test Click" 0)
+    , ( ( 2018, 4, 20 ), MyData "Test Click" 0 )
+    , ( ( 2018, 4, 2 ), MyData "Test Click" 0 )
+    , ( ( 2018, 4, 14 ), MyData "Test Click" 0 )
+    , ( ( 2018, 4, 23 ), MyData "Test Click" 0 )
+    , ( ( 2018, 4, 10 ), MyData "Test Click" 0 )
     ]

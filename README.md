@@ -18,9 +18,9 @@ TBD
 
 ## TODO
 
-* Fix reordering bug --cannot move content more than 2 rows down
-* Be able to have a custom header for things such as a nav bar -- Figure out how to have non-whole window sizing
-* Look into how to move day content by month
+* if custom day header then have a default header for days without content
+  * consider just having a formatter or function
+* Look into how to move day content forward and backward a month
 
 ## Example
 ![See it in action!](https://i.gyazo.com/93b1460787732710eb21e3e2a4cc96cd.gif)
