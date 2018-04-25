@@ -18,6 +18,7 @@ TBD
 
 ## TODO
 
+* test custom sidebar
 * if custom day header then have a default header for days without content
   * consider just having a formatter or function
 * Look into how to move day content forward and backward a month
