@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Featured exposing (..)
 
 import Calendar exposing (..)
 import Calendar.Types exposing (CalendarModel, CalendarDate(..), CalendarMsg(..), DragMsg(..), DayContent)
@@ -138,11 +138,22 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div [ container ]
-        [ div [ customHeaderStyle model.sizeOfHeader ]
-            [ h1 [ style [ ( "margin", "0" ) ] ]
-                [ text "Nav bar goes here" ]
-            ]
+        [ headerView model.sizeOfHeader
         , Html.map CMsg <| Calendar.view model.calendarModel
+        ]
+
+
+headerView : Int -> Html Msg
+headerView size =
+    div [ customHeaderStyle size ]
+        [ div [ gridAccess 1 1, navItem ]
+            [ span [ textStyle ] [ text "HOME" ] ]
+        , div [ gridAccess 1 2, navItem ]
+            [ span [ textStyle ] [ text "Page1" ] ]
+        , div [ gridAccess 1 3, navItem ]
+            [ span [ textStyle ] [ text "Page2" ] ]
+        , div [ gridAccess 1 4, navItem ]
+            [ span [ textStyle ] [ text "Page3" ] ]
         ]
 
 
@@ -152,8 +163,36 @@ customHeaderStyle size =
         [ ( "border-style", "solid" )
         , ( "border-width", "2px" )
         , ( "height", toString size ++ "px" )
-        , ( "text-align", "center" )
         , ( "margin", "0" )
+        , ( "display", "grid" )
+        , ( "grid-template-columns", "25% 25% 25% 25%" )
+        ]
+
+
+navItem : Attribute msg
+navItem =
+    style
+        [ ( "margin", "0" )
+        , ( "background", "purple" )
+        , ( "color", "white" )
+        , ( "text-align", "center" )
+        , ( "position", "relative" )
+        ]
+
+
+textStyle : Attribute msg
+textStyle =
+    style
+        [ ( "top", "50%" )
+        , ( "position", "absolute" )
+        ]
+
+
+gridAccess : Int -> Int -> Attribute msg
+gridAccess row col =
+    style
+        [ ( "grid-row", toString row )
+        , ( "grid-column", toString col )
         ]
 
 
