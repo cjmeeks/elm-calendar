@@ -259,6 +259,9 @@ initCalendarModel =
 subscriptions : CalendarModel a -> Sub (CalendarMsg a)
 subscriptions model =
     let
+        temp =
+            "s"
+
         dragSub =
             case model.drag of
                 Nothing ->
