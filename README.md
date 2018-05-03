@@ -23,6 +23,7 @@ TBD
   * consider just having a formatter or function
 * Look into how to move day content forward and backward a month
 * make a simple example and fully featured example
+* redo the grid system with a overall grid then a just daycontent grid
 * finish readme
 
 ## Example

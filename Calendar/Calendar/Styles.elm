@@ -21,9 +21,7 @@ gridAccess row col =
 gridItem : Attribute msg
 gridItem =
     style
-        [ ( "border-style", "solid" )
-        , ( "border-width", "2px" )
-        ]
+        [ ( "padding", "1px" ) ]
 
 
 gridAccessSpanRow : Int -> Int -> Int -> Attribute msg
@@ -48,7 +46,7 @@ calendarGrid height =
         [ ( "display", "grid" )
         , ( "height", toString height ++ "px" )
         , ( "width", "100%" )
-        , ( "grid-template-rows", "5% 19% 19% 19% 19% 19%" )
+        , ( "grid-template-rows", "5% 5% 18% 18% 18% 18% 18%" )
         , ( "grid-template-columns", "14.2% 14.2% 14.2% 14.2% 14.2% 14.2%" )
         , ( "user-select", "none" )
         ]
@@ -70,9 +68,15 @@ calendarHeader =
         [ ( "margin", "0px" )
         , ( "text-align", "center" )
         , ( "height", "100%" )
-        , ( "border-bottom-style", "solid" )
-        , ( "border-top-style", "solid" )
-        , ( "border-width", "1px" )
+        ]
+
+
+subHeader : Attribute msg
+subHeader =
+    style
+        [ ( "margin", "0px" )
+        , ( "text-align", "center" )
+        , ( "height", "100%" )
         ]
 
 
@@ -81,10 +85,6 @@ headerButton =
     style
         [ ( "margin", "0px" )
         , ( "text-align", "center" )
-        , ( "border-style", "solid" )
-        , ( "border-width", "1px" )
-        , ( "height", "100%" )
-        , ( "font-size", "40px" )
         , ( "background-color", "lightgrey" )
         ]
 

@@ -157,6 +157,7 @@ turnOffDefaultHeader model =
     in
         { model | config = newConfig }
 
+
 {-|
 
     setHeaderHeight
@@ -172,6 +173,7 @@ setHeaderHeight height model =
     in
         { model | config = newConfig }
 
+
 {-|
 
     setSidebarWidth
@@ -186,6 +188,7 @@ setSidebarWidth width model =
             { config | customSidebarWidth = width }
     in
         { model | config = newConfig }
+
 
 initCustomStuff : CustomStuff a
 initCustomStuff =
@@ -348,7 +351,8 @@ view model =
             else
                 div [ headerButton ] [ text "<<" ]
 
-        heightOfDiv = model.size.height - model.config.customHeaderHeight
+        heightOfDiv =
+            model.size.height - model.config.customHeaderHeight
     in
         div [ calendarGrid heightOfDiv, class "calendar-container" ] <|
             List.append
@@ -377,7 +381,8 @@ view model =
                         [ Html.map CustomMsg forwardButton ]
                     ]
                 ]
-                monthContent
+            <|
+                List.append subHeaders monthContent
 
 
 {-| updates the Calendar

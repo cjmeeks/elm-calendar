@@ -174,10 +174,10 @@ moveItem fromPosX offsetX fromPosY offsetY model =
             (fromPosX + (round offsetX)) % 8
 
         newY =
-            if ((fromPosY + (round offsetY)) % 8) > 6 then
-                6
+            if ((fromPosY + (round offsetY)) % 8) > 7 then
+                7
             else
-                clamp 2 6 ((fromPosY + (round offsetY)) % 8)
+                clamp 3 7 ((fromPosY + (round offsetY)) % 8)
 
         temp =
             Debug.log "(from, offset, newY)" ( fromPosY, offsetY, newY )
@@ -196,7 +196,7 @@ moveItem fromPosX offsetX fromPosY offsetY model =
                             )
 
                         Nothing ->
-                            if newY == 6 then
+                            if newY == 7 then
                                 case Dict.get ( newX, (newY - 1) ) indexedMonthContent of
                                     Just item ->
                                         ( listToInternalMonth <|
@@ -574,7 +574,7 @@ getMonthGridFromDates dates =
                 [] ->
                     acc
     in
-        getGridXY dates 2 []
+        getGridXY dates 3 []
 
 
 updateContent : CalendarModel a -> CalendarModel a
@@ -605,6 +605,15 @@ updateInternalMonthGrid month =
         { month | days = newDays }
 
 
+subHeaders : List (Html (CalendarMsg a))
+subHeaders =
+    let
+        list =
+            [ Mon, Tue, Wed, Thu, Fri, Sat, Sun ]
+    in
+        List.map (\x -> div [ class "calendar-weekday-header", subHeader, gridAccess 2 (dayToGridxPosition x) ] [ text <| dayToString x ]) list
+
+
 dayToGridxPosition : Weekday -> Int
 dayToGridxPosition weekd =
     case weekd of
@@ -628,6 +637,31 @@ dayToGridxPosition weekd =
 
         Sun ->
             1
+
+
+dayToString : Weekday -> String
+dayToString weekd =
+    case weekd of
+        Mon ->
+            "Monday"
+
+        Tue ->
+            "Tuesday"
+
+        Wed ->
+            "Wednesday"
+
+        Thu ->
+            "Thursday"
+
+        Fri ->
+            "Friday"
+
+        Sat ->
+            "Saturday"
+
+        Sun ->
+            "Sunday"
 
 
 getMonthInt : Date.Month -> Int
