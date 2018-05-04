@@ -21,7 +21,7 @@ gridAccess row col =
 gridItem : Attribute msg
 gridItem =
     style
-        [ ( "padding", "1px" ) ]
+        []
 
 
 gridAccessSpanRow : Int -> Int -> Int -> Attribute msg
@@ -46,9 +46,34 @@ calendarGrid height =
         [ ( "display", "grid" )
         , ( "height", toString height ++ "px" )
         , ( "width", "100%" )
-        , ( "grid-template-rows", "5% 5% 18% 18% 18% 18% 18%" )
+        , ( "grid-template-rows", "5% 5% 80%" )
         , ( "grid-template-columns", "14.2% 14.2% 14.2% 14.2% 14.2% 14.2%" )
         , ( "user-select", "none" )
+        ]
+
+
+subHeaderGrid : Attribute msg
+subHeaderGrid =
+    style
+        [ ( "display", "grid" )
+        , ( "width", "100%" )
+        , ( "grid-template-columns", "14.2% 14.2% 14.2% 14.2% 14.2% 14.2%" )
+        , ( "grid-column-gap", "1px" )
+        , ( "user-select", "none" )
+        ]
+
+
+calendarDayGrid : Int -> Attribute msg
+calendarDayGrid height =
+    style
+        [ ( "display", "grid" )
+        , ( "height", toString height ++ "px" )
+        , ( "width", "100%" )
+        , ( "grid-template-rows", "20% 20% 20% 20% 20%" )
+        , ( "grid-template-columns", "14.2% 14.2% 14.2% 14.2% 14.2% 14.2%" )
+        , ( "user-select", "none" )
+        , ( "grid-column-gap", "1px" )
+        , ( "padding-top", "1px" )
         ]
 
 
@@ -74,9 +99,10 @@ calendarHeader =
 subHeader : Attribute msg
 subHeader =
     style
-        [ ( "margin", "0px" )
+        [ ( "margin", "0" )
         , ( "text-align", "center" )
         , ( "height", "100%" )
+        , ( "background-color", "lightgrey" )
         ]
 
 

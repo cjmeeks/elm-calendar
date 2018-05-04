@@ -174,10 +174,10 @@ moveItem fromPosX offsetX fromPosY offsetY model =
             (fromPosX + (round offsetX)) % 8
 
         newY =
-            if ((fromPosY + (round offsetY)) % 8) > 7 then
-                7
+            if ((fromPosY + (round offsetY)) % 8) > 5 then
+                5
             else
-                clamp 3 7 ((fromPosY + (round offsetY)) % 8)
+                clamp 1 5 ((fromPosY + (round offsetY)) % 8)
 
         temp =
             Debug.log "(from, offset, newY)" ( fromPosY, offsetY, newY )
@@ -196,7 +196,7 @@ moveItem fromPosX offsetX fromPosY offsetY model =
                             )
 
                         Nothing ->
-                            if newY == 7 then
+                            if newY == 5 then
                                 case Dict.get ( newX, (newY - 1) ) indexedMonthContent of
                                     Just item ->
                                         ( listToInternalMonth <|
@@ -574,7 +574,7 @@ getMonthGridFromDates dates =
                 [] ->
                     acc
     in
-        getGridXY dates 3 []
+        getGridXY dates 1 []
 
 
 updateContent : CalendarModel a -> CalendarModel a
@@ -611,7 +611,7 @@ subHeaders =
         list =
             [ Mon, Tue, Wed, Thu, Fri, Sat, Sun ]
     in
-        List.map (\x -> div [ class "calendar-weekday-header", subHeader, gridAccess 2 (dayToGridxPosition x) ] [ text <| dayToString x ]) list
+        List.map (\x -> div [ class "calendar-weekday-header", subHeader, gridAccess 1 (dayToGridxPosition x) ] [ text <| dayToString x ]) list
 
 
 dayToGridxPosition : Weekday -> Int

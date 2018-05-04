@@ -353,9 +353,13 @@ view model =
 
         heightOfDiv =
             model.size.height - model.config.customHeaderHeight
+
+        subHeader =
+            div [ subHeaderGrid, gridAccessSpanCol 2 7 1 ]
+                subHeaders
     in
-        div [ calendarGrid heightOfDiv, class "calendar-container" ] <|
-            List.append
+        div [ class "calendar-container" ]
+            [ div [ calendarGrid heightOfDiv ]
                 [ div
                     [ gridAccessSpanCol 1 7 1
                     , headerGrid
@@ -380,9 +384,10 @@ view model =
                         ]
                         [ Html.map CustomMsg forwardButton ]
                     ]
+                , subHeader
+                , div [ calendarDayGrid <| model.size.height - (round (0.1 * (toFloat model.size.height))), gridAccessSpanCol 3 7 1 ] monthContent
                 ]
-            <|
-                List.append subHeaders monthContent
+            ]
 
 
 {-| updates the Calendar

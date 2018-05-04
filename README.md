@@ -21,10 +21,10 @@ TBD
 * test custom sidebar
 * if custom day header then have a default header for days without content
   * consider just having a formatter or function
-* Look into how to move day content forward and backward a month
 * make a simple example and fully featured example
 * redo the grid system with a overall grid then a just daycontent grid
 * finish readme
+* Look into how to move day content forward and backward a month (maybe)
 
 ## Example
 ![See it in action!](https://i.gyazo.com/93b1460787732710eb21e3e2a4cc96cd.gif)
