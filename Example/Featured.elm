@@ -53,8 +53,13 @@ init =
         initModel =
             Model (setDayContent testData cModel) (Dict.fromList testCase) 50
 
+        updatedCModel =
+            initModel.calendarModel
+                |> Calendar.setCustomForwardButton testCustomForwardButton
+                |> Calendar.setCustomBackButton testCustomBackButton
+
         configStuff =
-            { initModel | calendarModel = Calendar.setHeaderHeight initModel.sizeOfHeader initModel.calendarModel }
+            { initModel | calendarModel = Calendar.setHeaderHeight initModel.sizeOfHeader updatedCModel }
     in
         ( configStuff, Cmd.map CMsg cCmd )
 
@@ -138,8 +143,8 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div [ container ]
-        [ headerView model.sizeOfHeader
-        , Html.map CMsg <| Calendar.view model.calendarModel
+        [ div [ gridAccess 1 1 ] [ headerView model.sizeOfHeader ]
+        , div [ gridAccess 2 1 ] [ Html.map CMsg <| Calendar.view model.calendarModel ]
         ]
 
 
@@ -160,12 +165,11 @@ headerView size =
 customHeaderStyle : Int -> Attribute msg
 customHeaderStyle size =
     style
-        [ ( "border-style", "solid" )
-        , ( "border-width", "2px" )
-        , ( "height", toString size ++ "px" )
-        , ( "margin", "0" )
+        [ ( "height", toString size ++ "px" )
         , ( "display", "grid" )
-        , ( "grid-template-columns", "25% 25% 25% 25%" )
+        , ( "grid-template-columns", "24.5% 24.5% 24.5% 24.5%" )
+        , ( "grid-gap", "0.5%" )
+        , ( "box-sizing", "border-box" )
         ]
 
 
@@ -200,6 +204,32 @@ container : Attribute msg
 container =
     style
         [ ( "height", "100%" )
+        , ( "display", "grid" )
+        , ( "grid-template-rows", "50px 1fr" )
+        , ( "grid-gap", "1%" )
+        ]
+
+
+buttonContainer : Attribute msg
+buttonContainer =
+    style
+        [ ( "height", "100%" ) ]
+
+
+forbackBtn : Attribute msg
+forbackBtn =
+    style
+        [ ( "border-radius", "5px" )
+        , ( "color", "purple" )
+        , ( "background", "transparent" )
+        , ( "border", "2px solid purple" )
+        , ( "border-style", "inset" )
+        , ( "cursor", "pointer" )
+        , ( "text-align", "center" )
+        , ( "height", "100%" )
+        , ( "width", "100%" )
+        , ( "float", "left" )
+        , ( "box-sizing", "border-box" )
         ]
 
 
@@ -250,11 +280,11 @@ updateData (CalendarDate to) (CalendarDate from) model =
 
 
 testCustomForwardButton =
-    div [] [ text "Forward" ]
+    div [ buttonContainer ] [ div [ forbackBtn ] [ text "Forward" ] ]
 
 
 testCustomBackButton =
-    div [] [ text "Back" ]
+    div [ buttonContainer ] [ div [ forbackBtn ] [ text "Back" ] ]
 
 
 testCase : List ( ( Int, Int, Int ), MyData )

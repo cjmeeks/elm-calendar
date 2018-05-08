@@ -385,7 +385,7 @@ view model =
                         [ Html.map CustomMsg forwardButton ]
                     ]
                 , subHeader
-                , div [ calendarDayGrid <| model.size.height - (round (0.1 * (toFloat model.size.height))), gridAccessSpanCol 3 7 1 ] monthContent
+                , div [ calendarDayGrid <| round (0.9 * (toFloat heightOfDiv)), gridAccessSpanCol 3 7 1 ] monthContent
                 ]
             ]
 

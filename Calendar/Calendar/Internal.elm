@@ -118,14 +118,20 @@ updateDrags msg model =
             case model.drag of
                 Just { xIndex, startX, currentX, yIndex, startY, currentY } ->
                     let
+                        heightOfDiv =
+                            toFloat (model.size.height - model.config.customHeaderHeight)
+
                         headerSize =
-                            (toFloat (model.size.height - model.config.customHeaderHeight)) * 0.05
+                            heightOfDiv * 0.1
 
                         ySize =
-                            (toFloat model.size.height) - headerSize
+                            heightOfDiv - headerSize
+
+                        widthOfDiv =
+                            model.size.width - model.config.customSidebarWidth
 
                         calculateX =
-                            (toFloat (model.size.width - model.config.customSidebarWidth)) / 7
+                            (toFloat widthOfDiv) / 7
 
                         calculateY =
                             (ySize / 6)

@@ -22,7 +22,6 @@ TBD
 * if custom day header then have a default header for days without content
   * consider just having a formatter or function
 * make a simple example and fully featured example
-* redo the grid system with a overall grid then a just daycontent grid
 * finish readme
 * Look into how to move day content forward and backward a month (maybe)
 

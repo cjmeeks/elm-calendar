@@ -46,9 +46,11 @@ calendarGrid height =
         [ ( "display", "grid" )
         , ( "height", toString height ++ "px" )
         , ( "width", "100%" )
-        , ( "grid-template-rows", "5% 5% 80%" )
-        , ( "grid-template-columns", "14.2% 14.2% 14.2% 14.2% 14.2% 14.2%" )
+        , ( "grid-template-rows", "4% 4% 89%" )
+        , ( "grid-template-columns", "13.2% 13.2% 13.2% 13.2% 13.2% 13.2%" )
+        , ( "grid-gap", "1%" )
         , ( "user-select", "none" )
+        , ( "box-sizing", "border-box" )
         ]
 
 
@@ -57,9 +59,10 @@ subHeaderGrid =
     style
         [ ( "display", "grid" )
         , ( "width", "100%" )
-        , ( "grid-template-columns", "14.2% 14.2% 14.2% 14.2% 14.2% 14.2%" )
-        , ( "grid-column-gap", "1px" )
+        , ( "grid-template-columns", "13.2% 13.2% 13.2% 13.2% 13.2% 13.2%" )
+        , ( "grid-gap", "1%" )
         , ( "user-select", "none" )
+        , ( "box-sizing", "border-box" )
         ]
 
 
@@ -69,11 +72,11 @@ calendarDayGrid height =
         [ ( "display", "grid" )
         , ( "height", toString height ++ "px" )
         , ( "width", "100%" )
-        , ( "grid-template-rows", "20% 20% 20% 20% 20%" )
-        , ( "grid-template-columns", "14.2% 14.2% 14.2% 14.2% 14.2% 14.2%" )
+        , ( "grid-template-rows", "19% 19% 19% 19% 19%" )
+        , ( "grid-template-columns", "13.2% 13.2% 13.2% 13.2% 13.2% 13.2%" )
         , ( "user-select", "none" )
-        , ( "grid-column-gap", "1px" )
-        , ( "padding-top", "1px" )
+        , ( "grid-gap", "1%" )
+        , ( "box-sizing", "border-box" )
         ]
 
 
@@ -84,6 +87,7 @@ headerGrid =
         , ( "height", "100%" )
         , ( "width", "100%" )
         , ( "grid-template-columns", "10% 80% 10%" )
+        , ( "box-sizing", "border-box" )
         ]
 
 
