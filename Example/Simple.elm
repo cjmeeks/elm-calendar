@@ -184,10 +184,10 @@ updateData (CalendarDate to) (CalendarDate from) model =
 
 testCase : List ( ( Int, Int, Int ), MyData )
 testCase =
-    [ ( ( 2018, 4, 1 ), MyData "Test Click" 0 )
-    , ( ( 2018, 4, 20 ), MyData "Test Click" 0 )
-    , ( ( 2018, 4, 2 ), MyData "Test Click" 0 )
-    , ( ( 2018, 4, 14 ), MyData "Test Click" 0 )
-    , ( ( 2018, 4, 23 ), MyData "Test Click" 0 )
-    , ( ( 2018, 4, 10 ), MyData "Test Click" 0 )
+    [ ( ( 2018, 6, 1 ), MyData "Test Click" 0 )
+    , ( ( 2018, 6, 20 ), MyData "Test Click" 0 )
+    , ( ( 2018, 6, 2 ), MyData "Test Click" 0 )
+    , ( ( 2018, 6, 14 ), MyData "Test Click" 0 )
+    , ( ( 2018, 6, 23 ), MyData "Test Click" 0 )
+    , ( ( 2018, 6, 10 ), MyData "Test Click" 0 )
     ]
