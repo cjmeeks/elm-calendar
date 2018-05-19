@@ -57,22 +57,23 @@ calendarModel =
     setDayContent data cModel
 ```
 
-To handle custom messages in the update
+To handle custom messages in the update we first see if the message is a CustomMsg(This is a CalendarMsg) and call update on that if not we update the calendar as it is calendar msg that you do not need to handle.
 ```elm
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         CMsg cMsg ->
             let
-                ( updatedCalendar, cCmd ) =
-                    Calendar.update cMsg model.calendarModel
-
                 ( updatedModel, cmds ) =
                     case cMsg of
                         CustomMsg customMsg ->
                             update customMsg { model | calendarModel = updatedCalendar }
 
                         _ ->
+                          let
+                            ( updatedCalendar, cCmd ) =
+                              Calendar.update cMsg model.calendarModel
+                          in
                             { model | calendarModel = updatedCalendar } ! []
             in
                 ( updatedModel, Cmd.batch [ Cmd.map CMsg cCmd, cmds ] )
