@@ -355,11 +355,11 @@ view model =
             model.size.height - model.config.customHeaderHeight
 
         subHeader =
-            div [ subHeaderGrid, gridAccessSpanCol 2 7 1 ]
+            div [ subHeaderGrid, gridAccessSpanCol 2 7 1, class "calendar-sub-header" ]
                 subHeaders
     in
         div [ class "calendar-container" ]
-            [ div [ calendarGrid heightOfDiv ]
+            [ div [ calendarGrid heightOfDiv, class "calendar-grid" ]
                 [ div
                     [ gridAccessSpanCol 1 7 1
                     , headerGrid
@@ -385,14 +385,10 @@ view model =
                         [ Html.map CustomMsg forwardButton ]
                     ]
                 , subHeader
-                , div [ calendarDayGrid <| round (0.9 * (toFloat heightOfDiv)), gridAccessSpanCol 3 7 1 ] monthContent
+                , div [ calendarDayGrid <| round (0.9 * (toFloat heightOfDiv)), gridAccessSpanCol 3 7 1, class "calendar-content-grid" ] monthContent
                 ]
             ]
 
-        ( curYear, curMonth, curDay ) =
-            case model.currentDate of
-                Just d ->
-                    TDate.toTuple d
 
 {-| updates the Calendar
 
@@ -497,11 +493,6 @@ catchToAndFromDates msg model =
         _ ->
             Nothing
 
-        Resize newSize ->
-            { model | size = newSize } ! []
-        
-        CustomMsg m ->
-            model ! []
 
 
 -- Date Stuff

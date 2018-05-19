@@ -5,7 +5,7 @@ elm package install cjmeeks/elm-calendar
 ```
 
 ## Description
-An elm package for an calendar that has additional features such as:
+WIP elm package for an calendar that has additional features such as:
 * Reordering content
 * Custom Content In each day frame
 * Barebones css so that user can customize everything
@@ -85,6 +85,7 @@ update msg model =
 
 * if custom day header then have a default header for days without content
   * consider just having a formatter or function
+* fill other empty grid items 
 * Look into how to move day content forward and backward a month
   * Get feedback if this would be a good feature to add or to leave it to the dev to make
 

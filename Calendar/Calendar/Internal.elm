@@ -60,11 +60,12 @@ viewDayContent idx idy dayContent model =
             div
                 [ style moveStyle
                 , Attrs.map Drags <| Calendar.Styles.onMouseDown <| DragStart dayContent.dayIndex dayContent.weekIndex dayContent
+                , class "calendar-user-content-day"
                 ]
                 [ Html.map CustomMsg dayContent.content ]
 
         defaultHeader =
-            h3 [ defaultHeaderStyle ] [ text <| dateToString dayContent.theDate ]
+            h3 [ defaultHeaderStyle, class "calendar-day-header" ] [ text <| dateToString dayContent.theDate ]
 
         innerHtml =
             if model.config.customDayHeader then
@@ -74,7 +75,7 @@ viewDayContent idx idy dayContent model =
                 , dayContentHtml
                 ]
     in
-        div [ gridAccess idy idx, gridItem ]
+        div [ gridAccess idy idx, gridItem, class "calendar-day-grid-item" ]
             innerHtml
 
 
