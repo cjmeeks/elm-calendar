@@ -13,7 +13,7 @@ An elm package for an calendar that has additional features such as:
 
 ## Usage
 
-Subscriptions
+Subscriptions - The drag and drop requires subscriptions
 ```elm
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -23,34 +23,41 @@ subscriptions model =
 The Calendar.initCalendarModel initializes a CalendarModel for you then you can pass in the html data to be displayed
 ```elm
 
-testCase : List ( ( Int, Int, Int ), MyData )
-testCase =
+testData : List ( ( Int, Int, Int ), MyData )
+testData =
     [ ( ( 2018, 6, 1 ), MyData "Test Click" 0 )
     , ( ( 2018, 6, 20 ), MyData "Test Click" 0 )
     ]
-  
-
-viewData : CalendarDate -> MyData -> Html Msg
-viewData key data =
-    text data.text
 
 init...
 ( cModel, cCmd ) =
     Calendar.initCalendarModel
 
-testData =
+```
+
+This maps the testData into a tuple of a provided Type CalendarDate and Html with the function viewData as the html generator
+```elm
+
+viewData : CalendarDate -> MyData -> Html Msg
+viewData key data =
+    text data.text
+
+data =
     List.map
         (\( ( a, b, c ), data ) ->
             ( CalendarDate ( a, b, c ), viewData (CalendarDate ( a, b, c )) data )
         )
         testCase
 
+
+```
+Sets the initial content of the calendar with our data
+```elm
 calendarModel =
-    setDayContent testData cModel
+    setDayContent data cModel
 ```
 
 To handle custom messages in the update
-
 ```elm
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -74,10 +81,8 @@ update msg model =
 
 ## TODO
 
-* test custom sidebar
 * if custom day header then have a default header for days without content
   * consider just having a formatter or function
-* finish readme
 * Look into how to move day content forward and backward a month
   * Get feedback if this would be a good feature to add or to leave it to the dev to make
 
