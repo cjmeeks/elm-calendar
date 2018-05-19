@@ -5,6 +5,7 @@ elm package install cjmeeks/elm-calendar
 ```
 
 ## Description
+(This project is a WIP)
 WIP elm package for an calendar that has additional features such as:
 * Reordering content
 * Custom Content In each day frame
