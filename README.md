@@ -11,8 +11,9 @@ WIP elm package for an calendar that has additional features such as:
 * Barebones css so that user can customize everything
 
 
-## Usage
 
+## Usage
+Also see the code [examples](https://github.com/cjmeeks/elm-calendar/tree/master/Example)
 Subscriptions - The drag and drop requires subscriptions
 ```elm
 subscriptions : Model -> Sub Msg
