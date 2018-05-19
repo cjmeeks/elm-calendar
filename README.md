@@ -42,6 +42,7 @@ viewData : CalendarDate -> MyData -> Html Msg
 viewData key data =
     text data.text
 
+init...
 data =
     List.map
         (\( ( a, b, c ), data ) ->
