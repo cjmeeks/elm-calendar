@@ -389,6 +389,10 @@ view model =
                 ]
             ]
 
+        ( curYear, curMonth, curDay ) =
+            case model.currentDate of
+                Just d ->
+                    TDate.toTuple d
 
 {-| updates the Calendar
 
@@ -493,6 +497,11 @@ catchToAndFromDates msg model =
         _ ->
             Nothing
 
+        Resize newSize ->
+            { model | size = newSize } ! []
+        
+        CustomMsg m ->
+            model ! []
 
 
 -- Date Stuff
