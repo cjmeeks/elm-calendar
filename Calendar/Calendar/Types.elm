@@ -46,7 +46,7 @@ type alias CalendarModel a =
     , drag : Maybe Drag
     , movingContent : Maybe (DayContent a)
     , size : Window.Size
-    , config : (Config a)
+    , config : Config a
     }
 
 
@@ -65,10 +65,12 @@ type alias Drag =
 {-| Config for library
 -}
 type alias Config a =
-    { customHeader : Bool
+    { customDayHeader : Bool
     , customButtons : Bool
-    , customStuff : (CustomStuff a)
+    , customStuff : CustomStuff a
     , toggleDragging : Bool
+    , customHeaderHeight : Int
+    , customSidebarWidth : Int
     }
 
 
@@ -86,8 +88,8 @@ MovedItem is exposed so that you can subscribe to it and update your side of thi
 You will have to have a msg that is msg CalendarDate CalendarDate
 MovedItem FromDate ToDate
 -}
-type CalendarMsg a = 
-    RecieveDate Date.Date
+type CalendarMsg a
+    = RecieveDate Date.Date
     | MonthForward
     | MonthBackward
     | Drags (DragMsg a)
@@ -118,8 +120,8 @@ type alias MovedDates =
 
     Export DragEnd to determine when something has moved
 -}
-type DragMsg a =
-     DragStart Int Int (DayContent a) Position
+type DragMsg a
+    = DragStart Int Int (DayContent a) Position
     | DragAt Position
     | DragEnd Position
 

@@ -21,9 +21,7 @@ gridAccess row col =
 gridItem : Attribute msg
 gridItem =
     style
-        [ ( "border-style", "solid" )
-        , ( "border-width", "2px" )
-        ]
+        []
 
 
 gridAccessSpanRow : Int -> Int -> Int -> Attribute msg
@@ -42,15 +40,43 @@ gridAccessSpanCol row span col =
         ]
 
 
-calendarGrid : Attribute msg
-calendarGrid =
+calendarGrid : Int -> Attribute msg
+calendarGrid height =
     style
         [ ( "display", "grid" )
-        , ( "height", "100%" )
+        , ( "height", toString height ++ "px" )
         , ( "width", "100%" )
-        , ( "grid-template-rows", "5% 19% 19% 19% 19% 19%" )
-        , ( "grid-template-columns", "14.2% 14.2% 14.2% 14.2% 14.2% 14.2%" )
+        , ( "grid-template-rows", "4% 4% 89%" )
+        , ( "grid-template-columns", "13.2% 13.2% 13.2% 13.2% 13.2% 13.2%" )
+        , ( "grid-gap", "1%" )
         , ( "user-select", "none" )
+        , ( "box-sizing", "border-box" )
+        ]
+
+
+subHeaderGrid : Attribute msg
+subHeaderGrid =
+    style
+        [ ( "display", "grid" )
+        , ( "width", "100%" )
+        , ( "grid-template-columns", "13.2% 13.2% 13.2% 13.2% 13.2% 13.2%" )
+        , ( "grid-gap", "1%" )
+        , ( "user-select", "none" )
+        , ( "box-sizing", "border-box" )
+        ]
+
+
+calendarDayGrid : Int -> Attribute msg
+calendarDayGrid height =
+    style
+        [ ( "display", "grid" )
+        , ( "height", toString height ++ "px" )
+        , ( "width", "100%" )
+        , ( "grid-template-rows", "19% 19% 19% 19% 19%" )
+        , ( "grid-template-columns", "13.2% 13.2% 13.2% 13.2% 13.2% 13.2%" )
+        , ( "user-select", "none" )
+        , ( "grid-gap", "1%" )
+        , ( "box-sizing", "border-box" )
         ]
 
 
@@ -61,6 +87,7 @@ headerGrid =
         , ( "height", "100%" )
         , ( "width", "100%" )
         , ( "grid-template-columns", "10% 80% 10%" )
+        , ( "box-sizing", "border-box" )
         ]
 
 
@@ -70,9 +97,16 @@ calendarHeader =
         [ ( "margin", "0px" )
         , ( "text-align", "center" )
         , ( "height", "100%" )
-        , ( "border-bottom-style", "solid" )
-        , ( "border-top-style", "solid" )
-        , ( "border-width", "1px" )
+        ]
+
+
+subHeader : Attribute msg
+subHeader =
+    style
+        [ ( "margin", "0" )
+        , ( "text-align", "center" )
+        , ( "height", "100%" )
+        , ( "background-color", "lightgrey" )
         ]
 
 
@@ -81,10 +115,6 @@ headerButton =
     style
         [ ( "margin", "0px" )
         , ( "text-align", "center" )
-        , ( "border-style", "solid" )
-        , ( "border-width", "1px" )
-        , ( "height", "100%" )
-        , ( "font-size", "40px" )
         , ( "background-color", "lightgrey" )
         ]
 
