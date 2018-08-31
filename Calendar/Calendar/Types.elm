@@ -1,16 +1,7 @@
-module Calendar.Types
-    exposing
-        ( CalendarModel
-        , MovedDates
-        , Drag
-        , Config
-        , CustomStuff
-        , DragMsg(..)
-        , CalendarMsg(..)
-        , CalendarDate(..)
-        , DayContent
-        , InternalMonth
-        )
+module Calendar.Types exposing
+    ( CalendarModel, MovedDates, Drag, Config, CustomStuff, DragMsg(..), DayContent, InternalMonth
+    , CalendarMsg(..), CalendarDate(..), DragMsg(..)
+    )
 
 {-| This library is for a drag and drop calendar
 
@@ -26,17 +17,18 @@ module Calendar.Types
 
 -}
 
-import Time.Date as TDate exposing (..)
-import Html exposing (..)
-import Dict
-import Window
 import Date
+import Dict
+import Html exposing (..)
 import Mouse exposing (Position)
+import Time.Date as TDate exposing (..)
+import Window
 
 
 {-|
 
     The Internal calendar model
+
 -}
 type alias CalendarModel a =
     { months : Dict.Dict ( Int, Int ) (InternalMonth a)
@@ -101,6 +93,7 @@ type CalendarMsg a
 {-|
 
     Wrapper for a tuple of (year,month,date)
+
 -}
 type CalendarDate
     = CalendarDate ( Int, Int, Int )
@@ -109,6 +102,7 @@ type CalendarDate
 {-|
 
     Moved item holds the to and from CalendarDate
+
 -}
 type alias MovedDates =
     { to : CalendarDate
@@ -119,6 +113,7 @@ type alias MovedDates =
 {-|
 
     Export DragEnd to determine when something has moved
+
 -}
 type DragMsg a
     = DragStart Int Int (DayContent a) Position
@@ -139,6 +134,7 @@ type alias DayContent a =
 {-|
 
     key of days is (year,month,day)
+
 -}
 type alias InternalMonth a =
     { month : Int

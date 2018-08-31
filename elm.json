@@ -1,0 +1,23 @@
+{
+    "type": "package",
+    "name": "cjmeeks/elm-calendar",
+    "summary": "Elm package for a drag and drop calendar",
+    "license": "MIT",
+    "version": "1.0.0",
+    "exposed-modules": [
+        "Calendar",
+        "Calendar.Types"
+    ],
+    "elm-version": "0.19.0 <= v < 0.20.0",
+    "dependencies": {
+        "elm/browser": "1.0.0 <= v < 2.0.0",
+        "elm/core": "1.0.0 <= v < 2.0.0",
+        "elm/html": "1.0.0 <= v < 2.0.0",
+        "elm/json": "1.0.0 <= v < 2.0.0",
+        "elm/time": "1.0.0 <= v < 2.0.0",
+        "elm-community/elm-time": "1.0.14 <= v < 2.0.0",
+        "elm-lang/window": "1.0.1 <= v < 2.0.0",
+        "justinmimbs/elm-date-extra": "3.0.0 <= v < 4.0.0"
+    },
+    "test-dependencies": {}
+}

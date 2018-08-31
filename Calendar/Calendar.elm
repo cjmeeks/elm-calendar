@@ -1,19 +1,11 @@
-module Calendar
-    exposing
-        ( initCalendarModel
-        , update
-        , view
-        , setDayContent
-        , subscriptions
-        , turnOnCustomButtons
-        , setCustomForwardButton
-        , setCustomBackButton
-        , addDayContent
-        , deleteDayContent
-        , catchToAndFromDates
-        , setHeaderHeight
-        , setSidebarWidth
-        )
+module Calendar exposing
+    ( view
+    , update
+    , subscriptions
+    , initCalendarModel
+    , setDayContent, setCustomForwardButton, setCustomBackButton, turnOnCustomButtons, addDayContent, deleteDayContent
+    , catchToAndFromDates, setHeaderHeight, setSidebarWidth
+    )
 
 {-| This library is for a drag and drop calendar
 
@@ -47,19 +39,19 @@ Inits and setters for customizing the html
 
 -}
 
+import Calendar.Internal exposing (..)
+import Calendar.Styles exposing (..)
+import Calendar.Types exposing (..)
 import Date
 import Dict
 import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Attributes as Attrs
+import Html.Attributes as Attrs exposing (..)
 import Html.Events exposing (..)
+import Mouse exposing (Position)
 import Task exposing (..)
 import Time.Date as TDate exposing (..)
-import Mouse exposing (Position)
 import Window exposing (..)
-import Calendar.Internal exposing (..)
-import Calendar.Types exposing (..)
-import Calendar.Styles exposing (..)
+
 
 
 --TODO
@@ -81,6 +73,7 @@ initConfig =
 {-|
 
     turnOnCustomButtons
+
 -}
 turnOnCustomButtons : CalendarModel a -> CalendarModel a
 turnOnCustomButtons model =
@@ -91,12 +84,13 @@ turnOnCustomButtons model =
         newConfig =
             { config | customButtons = True }
     in
-        { model | config = newConfig }
+    { model | config = newConfig }
 
 
 {-|
 
     turnOffCustomButtons
+
 -}
 turnOffCustomButtons : CalendarModel a -> CalendarModel a
 turnOffCustomButtons model =
@@ -107,12 +101,13 @@ turnOffCustomButtons model =
         newConfig =
             { config | customButtons = False }
     in
-        { model | config = newConfig }
+    { model | config = newConfig }
 
 
 {-|
 
     turnOnCustomButtons
+
 -}
 turnOnDragging : CalendarModel a -> CalendarModel a
 turnOnDragging model =
@@ -123,12 +118,13 @@ turnOnDragging model =
         newConfig =
             { config | toggleDragging = True }
     in
-        { model | config = newConfig }
+    { model | config = newConfig }
 
 
 {-|
 
     turnOffCustomButtons
+
 -}
 turnOffDragging : CalendarModel a -> CalendarModel a
 turnOffDragging model =
@@ -139,12 +135,13 @@ turnOffDragging model =
         newConfig =
             { config | toggleDragging = False }
     in
-        { model | config = newConfig }
+    { model | config = newConfig }
 
 
 {-|
 
     turnOffDefaultHeader
+
 -}
 turnOffDefaultHeader : CalendarModel a -> CalendarModel a
 turnOffDefaultHeader model =
@@ -155,12 +152,13 @@ turnOffDefaultHeader model =
         newConfig =
             { config | customDayHeader = True }
     in
-        { model | config = newConfig }
+    { model | config = newConfig }
 
 
 {-|
 
     setHeaderHeight
+
 -}
 setHeaderHeight : Int -> CalendarModel a -> CalendarModel a
 setHeaderHeight height model =
@@ -171,12 +169,13 @@ setHeaderHeight height model =
         newConfig =
             { config | customHeaderHeight = height }
     in
-        { model | config = newConfig }
+    { model | config = newConfig }
 
 
 {-|
 
     setSidebarWidth
+
 -}
 setSidebarWidth : Int -> CalendarModel a -> CalendarModel a
 setSidebarWidth width model =
@@ -187,7 +186,7 @@ setSidebarWidth width model =
         newConfig =
             { config | customSidebarWidth = width }
     in
-        { model | config = newConfig }
+    { model | config = newConfig }
 
 
 initCustomStuff : CustomStuff a
@@ -201,6 +200,7 @@ initCustomStuff =
 {-|
 
     setCustomForwardButton
+
 -}
 setCustomForwardButton : Html a -> CalendarModel a -> CalendarModel a
 setCustomForwardButton btn model =
@@ -217,12 +217,13 @@ setCustomForwardButton btn model =
         newConfig =
             { config | customButtons = True, customStuff = newButtons }
     in
-        { model | config = newConfig }
+    { model | config = newConfig }
 
 
 {-|
 
     setCustomBackButton
+
 -}
 setCustomBackButton : Html a -> CalendarModel a -> CalendarModel a
 setCustomBackButton btn model =
@@ -239,13 +240,14 @@ setCustomBackButton btn model =
         newConfig =
             { config | customButtons = True, customStuff = newButtons }
     in
-        { model | config = newConfig }
+    { model | config = newConfig }
 
 
 {-|
 
     The daycontent
     pass in msg type of your html
+
 -}
 initCalendarModel : ( CalendarModel a, Cmd (CalendarMsg a) )
 initCalendarModel =
@@ -255,6 +257,7 @@ initCalendarModel =
 {-|
 
     subscriptions : Calendar Subscriptions
+
 -}
 subscriptions : CalendarModel a -> Sub (CalendarMsg a)
 subscriptions model =
@@ -267,10 +270,11 @@ subscriptions model =
                 Just _ ->
                     if model.config.toggleDragging then
                         Sub.map Drags <| Sub.batch [ Mouse.moves DragAt, Mouse.ups DragEnd ]
+
                     else
                         Sub.none
     in
-        Sub.batch [ Window.resizes Resize, dragSub ]
+    Sub.batch [ Window.resizes Resize, dragSub ]
 
 
 
@@ -294,7 +298,7 @@ initWithDayContent list =
         combined =
             combineDateRangeWithListOfDayContent datesList list []
     in
-        CalendarModel Dict.empty Nothing 0 0 Nothing Nothing (Window.Size 0 0) initConfig
+    CalendarModel Dict.empty Nothing 0 0 Nothing Nothing (Window.Size 0 0) initConfig
 
 
 {-| Displays the Calendar
@@ -342,12 +346,14 @@ view model =
         forwardButton =
             if model.config.customButtons then
                 model.config.customStuff.forwardButton
+
             else
                 div [ headerButton ] [ text ">>" ]
 
         backButton =
             if model.config.customButtons then
                 model.config.customStuff.backButton
+
             else
                 div [ headerButton ] [ text "<<" ]
 
@@ -358,36 +364,36 @@ view model =
             div [ subHeaderGrid, gridAccessSpanCol 2 7 1, class "calendar-sub-header" ]
                 subHeaders
     in
-        div [ class "calendar-container" ]
-            [ div [ calendarGrid heightOfDiv, class "calendar-grid" ]
-                [ div
-                    [ gridAccessSpanCol 1 7 1
-                    , headerGrid
-                    , class "calendar-header-container"
-                    ]
-                    [ div
-                        [ onClick MonthBackward
-                        , gridAccess 1 1
-                        , class "calendar-header-back-button"
-                        ]
-                        [ Html.map CustomMsg backButton ]
-                    , h1
-                        [ calendarHeader
-                        , gridAccess 1 2
-                        , class "calendar-header-title"
-                        ]
-                        [ text <| monthToString model.currentMonth ]
-                    , div
-                        [ onClick MonthForward
-                        , gridAccess 1 3
-                        , class "calendar-header-forward-button"
-                        ]
-                        [ Html.map CustomMsg forwardButton ]
-                    ]
-                , subHeader
-                , div [ calendarDayGrid <| round (0.9 * (toFloat heightOfDiv)), gridAccessSpanCol 3 7 1, class "calendar-content-grid" ] monthContent
+    div [ class "calendar-container" ]
+        [ div [ calendarGrid heightOfDiv, class "calendar-grid" ]
+            [ div
+                [ gridAccessSpanCol 1 7 1
+                , headerGrid
+                , class "calendar-header-container"
                 ]
+                [ div
+                    [ onClick MonthBackward
+                    , gridAccess 1 1
+                    , class "calendar-header-back-button"
+                    ]
+                    [ Html.map CustomMsg backButton ]
+                , h1
+                    [ calendarHeader
+                    , gridAccess 1 2
+                    , class "calendar-header-title"
+                    ]
+                    [ text <| monthToString model.currentMonth ]
+                , div
+                    [ onClick MonthForward
+                    , gridAccess 1 3
+                    , class "calendar-header-forward-button"
+                    ]
+                    [ Html.map CustomMsg forwardButton ]
+                ]
+            , subHeader
+            , div [ calendarDayGrid <| round (0.9 * toFloat heightOfDiv), gridAccessSpanCol 3 7 1, class "calendar-content-grid" ] monthContent
             ]
+        ]
 
 
 {-| updates the Calendar
@@ -411,19 +417,21 @@ update msg model =
                         Nothing ->
                             Dict.insert ( yearInt, monthInt ) (insertDumbyMonth yearInt monthInt) model.months
             in
-                { model
-                    | currentDate = Just (date (Date.year rDate) monthInt (Date.day rDate))
-                    , currentMonth = monthInt
-                    , currentYear = yearInt
-                    , months = newMonths
-                }
-                    ! []
+            ( { model
+                | currentDate = Just (date (Date.year rDate) monthInt (Date.day rDate))
+                , currentMonth = monthInt
+                , currentYear = yearInt
+                , months = newMonths
+              }
+            , Cmd.none
+            )
 
         MonthForward ->
             let
                 ( newMonth, newYear ) =
                     if model.currentMonth == 12 then
                         ( 1, model.currentYear + 1 )
+
                     else
                         ( model.currentMonth + 1, model.currentYear )
 
@@ -435,13 +443,16 @@ update msg model =
                         Nothing ->
                             Dict.insert ( newYear, newMonth ) (insertDumbyMonth newYear newMonth) model.months
             in
-                { model | currentMonth = newMonth, currentYear = newYear, months = updatedContent } ! []
+            ( { model | currentMonth = newMonth, currentYear = newYear, months = updatedContent }
+            , Cmd.none
+            )
 
         MonthBackward ->
             let
                 ( newMonth, newYear ) =
                     if model.currentMonth == 1 then
                         ( 12, model.currentYear - 1 )
+
                     else
                         ( model.currentMonth - 1, model.currentYear )
 
@@ -453,19 +464,27 @@ update msg model =
                         Nothing ->
                             Dict.insert ( newYear, newMonth ) (insertDumbyMonth newYear newMonth) model.months
             in
-                { model | currentMonth = newMonth, currentYear = newYear, months = updatedContent } ! []
+            ( { model | currentMonth = newMonth, currentYear = newYear, months = updatedContent }
+            , Cmd.none
+            )
 
         Drags msg_ ->
             updateDrags msg_ model
 
         Resize newSize ->
-            { model | size = newSize } ! []
+            ( { model | size = newSize }
+            , Cmd.none
+            )
 
         CustomMsg m ->
-            model ! []
+            ( model
+            , Cmd.none
+            )
 
         DoNothing ->
-            model ! []
+            ( model
+            , Cmd.none
+            )
 
 
 {-| Catch the from date and to date of the moved content for use by the user
@@ -480,12 +499,12 @@ catchToAndFromDates msg model =
                         ( toDate, fromDate ) =
                             getFromAndToDates pos model
                     in
-                        case ( toDate, fromDate ) of
-                            ( Just toCalendarDate, Just fromCalendarDate ) ->
-                                Just <| MovedDates toCalendarDate fromCalendarDate
+                    case ( toDate, fromDate ) of
+                        ( Just toCalendarDate, Just fromCalendarDate ) ->
+                            Just <| MovedDates toCalendarDate fromCalendarDate
 
-                            _ ->
-                                Nothing
+                        _ ->
+                            Nothing
 
                 _ ->
                     Nothing
@@ -543,7 +562,7 @@ setDayContent days model =
         monthDict =
             Dict.fromList <| List.map (\x -> ( ( x.year, x.month ), x )) gridStuff
     in
-        { model | months = monthDict }
+    { model | months = monthDict }
 
 
 {-| Takes a tuple of (year, month, date) and Html content corresponding to that date
@@ -573,7 +592,7 @@ addDayContent ( year, month, day ) content model =
         newModelContent =
             Dict.insert ( year, month ) newMonth model.months
     in
-        { model | months = newModelContent }
+    { model | months = newModelContent }
 
 
 {-| Takes a tuple of (year, month, date) to be deleted
@@ -588,7 +607,7 @@ deleteDayContent ( year, month, day ) model =
                         newDays =
                             Dict.remove ( year, month, day ) m.days
                     in
-                        { m | days = newDays }
+                    { m | days = newDays }
 
                 Nothing ->
                     InternalMonth 0 0 Dict.empty
@@ -596,4 +615,4 @@ deleteDayContent ( year, month, day ) model =
         newModelContent =
             Dict.insert ( year, month ) newMonth model.months
     in
-        { model | months = newModelContent }
+    { model | months = newModelContent }

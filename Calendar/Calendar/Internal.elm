@@ -1,15 +1,14 @@
-module Calendar.Internal exposing (..)
+module Calendar.Internal exposing (addDay, combineDateRangeWithListOfDayContent, dateToString, datesInRange, dayToGridxPosition, dayToString, daysInMonth, endOfMonth, getFromAndToDates, getMinAndMaxDate, getMonthGridFromDates, getMonthInt, groupDayContentByMonth, initDayContentFromDate, insertDumbyMonth, isLeapYear, listToInternalMonth, monthFromInt, monthToString, moveItem, predMonth, startOfMonth, subDay, subHeaders, succMonth, updateContent, updateDrags, updateInternalMonthGrid, viewDayContent, viewMonth)
 
+import Calendar.Styles exposing (..)
 import Calendar.Types exposing (..)
 import Date
 import Dict
 import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Attributes as Attrs
-import Time.Date as TDate exposing (..)
+import Html.Attributes as Attrs exposing (..)
 import List.Extra
 import Mouse exposing (Position)
-import Calendar.Styles exposing (..)
+import Time.Date as TDate exposing (..)
 
 
 initDayContentFromDate : Date -> DayContent a
@@ -31,12 +30,12 @@ viewMonth model month =
                 Nothing ->
                     []
     in
-        List.map
-            (\( x, dayContent ) ->
-                viewDayContent dayContent.dayIndex dayContent.weekIndex dayContent model
-            )
-        <|
-            Dict.toList month.days
+    List.map
+        (\( x, dayContent ) ->
+            viewDayContent dayContent.dayIndex dayContent.weekIndex dayContent model
+        )
+    <|
+        Dict.toList month.days
 
 
 viewDayContent : Int -> Int -> DayContent a -> CalendarModel a -> Html (CalendarMsg a)
@@ -50,6 +49,7 @@ viewDayContent idx idy dayContent model =
                         , ( "box-shadow", "0 3px 6px rgba(0,0,0,0.24)" )
                         , ( "willChange", "transform" )
                         ]
+
                     else
                         []
 
@@ -70,13 +70,14 @@ viewDayContent idx idy dayContent model =
         innerHtml =
             if model.config.customDayHeader then
                 [ dayContentHtml ]
+
             else
                 [ defaultHeader
                 , dayContentHtml
                 ]
     in
-        div [ gridAccess idy idx, gridItem, class "calendar-day-grid-item" ]
-            innerHtml
+    div [ gridAccess idy idx, gridItem, class "calendar-day-grid-item" ]
+        innerHtml
 
 
 updateDrags : DragMsg a -> CalendarModel a -> ( CalendarModel a, Cmd (CalendarMsg a) )
@@ -99,7 +100,7 @@ updateDrags msg model =
             )
 
         DragAt pos ->
-            { model
+            ( { model
                 | drag =
                     Maybe.map
                         (\{ xIndex, startX, yIndex, startY } ->
@@ -112,8 +113,9 @@ updateDrags msg model =
                             }
                         )
                         model.drag
-            }
-                ! []
+              }
+            , Cmd.none
+            )
 
         DragEnd pos ->
             case model.drag of
@@ -132,16 +134,16 @@ updateDrags msg model =
                             model.size.width - model.config.customSidebarWidth
 
                         calculateX =
-                            (toFloat widthOfDiv) / 7
+                            toFloat widthOfDiv / 7
 
                         calculateY =
-                            (ySize / 6)
+                            ySize / 6
 
                         xOffset =
-                            toFloat <| (round ((toFloat currentX) - (toFloat startX)))
+                            toFloat <| round (toFloat currentX - toFloat startX)
 
                         yOffset =
-                            toFloat <| (round ((toFloat currentY) - (toFloat startY)))
+                            toFloat <| round (toFloat currentY - toFloat startY)
 
                         newModel =
                             moveItem
@@ -151,17 +153,19 @@ updateDrags msg model =
                                 (yOffset / calculateY)
                                 model
                     in
-                        { newModel
-                            | drag = Nothing
-                            , movingContent = Nothing
-                        }
-                            ! []
+                    ( { newModel
+                        | drag = Nothing
+                        , movingContent = Nothing
+                      }
+                    , Cmd.none
+                    )
 
                 Nothing ->
-                    { model
+                    ( { model
                         | drag = Nothing
-                    }
-                        ! []
+                      }
+                    , Cmd.none
+                    )
 
 
 moveItem : Int -> Float -> Int -> Float -> CalendarModel a -> CalendarModel a
@@ -178,13 +182,14 @@ moveItem fromPosX offsetX fromPosY offsetY model =
                     Dict.empty
 
         newX =
-            (fromPosX + (round offsetX)) % 8
+            modBy 8 (fromPosX + round offsetX)
 
         newY =
-            if ((fromPosY + (round offsetY)) % 8) > 5 then
+            if (modBy 8 (fromPosY + round offsetY)) > 5 then
                 5
+
             else
-                clamp 1 5 ((fromPosY + (round offsetY)) % 8)
+                clamp 1 5 (modBy 8 (fromPosY + round offsetY))
 
         temp =
             Debug.log "(from, offset, newY)" ( fromPosY, offsetY, newY )
@@ -204,7 +209,7 @@ moveItem fromPosX offsetX fromPosY offsetY model =
 
                         Nothing ->
                             if newY == 5 then
-                                case Dict.get ( newX, (newY - 1) ) indexedMonthContent of
+                                case Dict.get ( newX, newY - 1 ) indexedMonthContent of
                                     Just item ->
                                         ( listToInternalMonth <|
                                             Dict.values <|
@@ -216,6 +221,7 @@ moveItem fromPosX offsetX fromPosY offsetY model =
 
                                     Nothing ->
                                         ( listToInternalMonth <| Dict.values indexedMonthContent, Nothing, Nothing )
+
                             else
                                 ( listToInternalMonth <| Dict.values indexedMonthContent, Nothing, Nothing )
 
@@ -225,7 +231,7 @@ moveItem fromPosX offsetX fromPosY offsetY model =
         newMonths =
             Dict.insert ( newMonth.year, newMonth.month ) newMonth model.months
     in
-        { model | months = newMonths }
+    { model | months = newMonths }
 
 
 getFromAndToDates : Position -> CalendarModel a -> ( Maybe CalendarDate, Maybe CalendarDate )
@@ -234,16 +240,16 @@ getFromAndToDates pos model =
         Just { xIndex, startX, currentX, yIndex, startY, currentY } ->
             let
                 calculateX =
-                    (toFloat model.size.width) / 7
+                    toFloat model.size.width / 7
 
                 calculateY =
-                    (toFloat model.size.height) / 6
+                    toFloat model.size.height / 6
 
                 ( fromPosX, offsetX, fromPosY, offsetY ) =
                     ( xIndex
-                    , (((toFloat currentX) - (toFloat startX)) / calculateX)
+                    , (toFloat currentX - toFloat startX) / calculateX
                     , yIndex
-                    , (((toFloat currentY) - (toFloat startY)) / calculateY)
+                    , (toFloat currentY - toFloat startY) / calculateY
                     )
 
                 indexedMonthContent =
@@ -257,10 +263,10 @@ getFromAndToDates pos model =
                             Dict.empty
 
                 newX =
-                    (fromPosX + (round offsetX)) % 8
+                    modBy 8 (fromPosX + round offsetX)
 
                 newY =
-                    (fromPosY + (round offsetY)) % 7
+                    modBy 7 (fromPosY + round offsetY)
 
                 ( to, from ) =
                     case model.movingContent of
@@ -277,12 +283,12 @@ getFromAndToDates pos model =
                         Nothing ->
                             ( Nothing, Nothing )
             in
-                case ( to, from ) of
-                    ( Just ( ty, tm, td ), Just ( fy, fm, fd ) ) ->
-                        ( Just <| CalendarDate ( ty, tm, td ), Just <| CalendarDate ( fy, fm, fd ) )
+            case ( to, from ) of
+                ( Just ( ty, tm, td ), Just ( fy, fm, fd ) ) ->
+                    ( Just <| CalendarDate ( ty, tm, td ), Just <| CalendarDate ( fy, fm, fd ) )
 
-                    _ ->
-                        ( Nothing, Nothing )
+                _ ->
+                    ( Nothing, Nothing )
 
         Nothing ->
             ( Nothing, Nothing )
@@ -309,6 +315,7 @@ getMinAndMaxDate dates =
 
                     Nothing ->
                         date 2018 12 31
+
             else
                 date 2018 12 31
 
@@ -320,6 +327,7 @@ getMinAndMaxDate dates =
 
                     Nothing ->
                         date 2018 1 1
+
             else
                 date 2018 1 1
 
@@ -329,7 +337,7 @@ getMinAndMaxDate dates =
         maxMonthDate =
             date (year maxDate) (month maxDate) (daysInMonth (year maxDate) (month maxDate))
     in
-        ( minMonthDate, maxMonthDate )
+    ( minMonthDate, maxMonthDate )
 
 
 combineDateRangeWithListOfDayContent : List (DayContent a) -> List (DayContent a) -> List (DayContent a) -> List (DayContent a)
@@ -343,10 +351,11 @@ combineDateRangeWithListOfDayContent dateRange list acc =
                 mDate =
                     TDate.toTuple m.theDate
             in
-                if dDate == mDate then
-                    combineDateRangeWithListOfDayContent dli mli <| List.append acc [ m ]
-                else
-                    combineDateRangeWithListOfDayContent dli (m :: mli) <| List.append acc [ d ]
+            if dDate == mDate then
+                combineDateRangeWithListOfDayContent dli mli <| List.append acc [ m ]
+
+            else
+                combineDateRangeWithListOfDayContent dli (m :: mli) <| List.append acc [ d ]
 
         ( [], m :: mli ) ->
             combineDateRangeWithListOfDayContent [] mli <| List.append acc [ m ]
@@ -370,7 +379,7 @@ insertDumbyMonth year month =
                     getMonthGridFromDates <|
                         List.map initDayContentFromDate dates
     in
-        InternalMonth month year dayContent
+    InternalMonth month year dayContent
 
 
 
@@ -408,7 +417,7 @@ endOfMonth dateIn =
                 Nothing ->
                     0
     in
-        date y m d
+    date y m d
 
 
 {-| A function that subtracts 1 day from the given date and returns it.
@@ -431,6 +440,7 @@ subDay dateIn =
         predYear =
             if pred == 12 then
                 yearNum - 1
+
             else
                 yearNum
 
@@ -442,10 +452,11 @@ subDay dateIn =
                 Nothing ->
                     0
     in
-        if dayNum < 1 then
-            date predYear pred predDay
-        else
-            date yearNum monthNum dayNum
+    if dayNum < 1 then
+        date predYear pred predDay
+
+    else
+        date yearNum monthNum dayNum
 
 
 {-| A function that adds 1 day to the given date and returns it.
@@ -476,20 +487,22 @@ addDay dateIn =
         succYear =
             if succ == 1 then
                 yearNum + 1
+
             else
                 yearNum
     in
-        if dayNum > dim then
-            date succYear succ 1
-        else
-            date yearNum monthNum dayNum
+    if dayNum > dim then
+        date succYear succ 1
+
+    else
+        date yearNum monthNum dayNum
 
 
 {-| An opaque function to determine whether a given year is a leap year.
 -}
 isLeapYear : Int -> Bool
 isLeapYear y =
-    y % 400 == 0 || y % 100 /= 0 && y % 4 == 0
+    modBy 400 y == 0 || modBy 100 y /= 0 && modBy 4 y == 0
 
 
 {-| An opaque function returning the next month.
@@ -497,7 +510,7 @@ isLeapYear y =
 succMonth : Int -> Int
 succMonth month =
     month
-        |> flip rem 12
+        |> (\a -> (\dividend divisor -> remainderBy divisor dividend) a 12)
         |> (+) 1
 
 
@@ -508,12 +521,13 @@ predMonth month =
     let
         prev =
             (month - 1)
-                |> flip rem 12
+                |> (\a -> (\dividend divisor -> remainderBy divisor dividend) a 12)
     in
-        if prev == 0 then
-            12
-        else
-            prev
+    if prev == 0 then
+        12
+
+    else
+        prev
 
 
 datesInRange : Date -> Date -> List Date
@@ -524,12 +538,13 @@ datesInRange min max =
                 y =
                     subDay x
             in
-                if toTuple y == toTuple min then
-                    y :: acc
-                else
-                    go y (y :: acc)
+            if toTuple y == toTuple min then
+                y :: acc
+
+            else
+                go y (y :: acc)
     in
-        go (addDay max) []
+    go (addDay max) []
 
 
 groupDayContentByMonth : List (DayContent a) -> List (InternalMonth a)
@@ -544,21 +559,21 @@ groupDayContentByMonth content =
         toInternalMonthList =
             List.map (\x -> List.map listToInternalMonth x) sortedByMonth
     in
-        List.concat toInternalMonthList
+    List.concat toInternalMonthList
 
 
 listToInternalMonth : List (DayContent a) -> InternalMonth a
 listToInternalMonth content =
     let
         contentDict =
-            Dict.fromList <| List.map (\x -> ( (TDate.toTuple x.theDate), x )) content
+            Dict.fromList <| List.map (\x -> ( TDate.toTuple x.theDate, x )) content
     in
-        case List.head content of
-            Just item ->
-                (InternalMonth (TDate.month item.theDate) (TDate.year item.theDate) contentDict)
+    case List.head content of
+        Just item ->
+            InternalMonth (TDate.month item.theDate) (TDate.year item.theDate) contentDict
 
-            Nothing ->
-                InternalMonth 2000 1 Dict.empty
+        Nothing ->
+            InternalMonth 2000 1 Dict.empty
 
 
 getMonthGridFromDates : List (DayContent a) -> List (DayContent a)
@@ -571,17 +586,19 @@ getMonthGridFromDates dates =
                         xPos =
                             dayToGridxPosition (TDate.weekday d.theDate)
                     in
-                        if xPos == 99 then
-                            getGridXY li row acc
-                        else if xPos == 7 then
-                            getGridXY li (row + 1) (List.append acc [ { d | dayIndex = xPos, weekIndex = row } ])
-                        else
-                            getGridXY li row (List.append acc [ { d | dayIndex = xPos, weekIndex = row } ])
+                    if xPos == 99 then
+                        getGridXY li row acc
+
+                    else if xPos == 7 then
+                        getGridXY li (row + 1) (List.append acc [ { d | dayIndex = xPos, weekIndex = row } ])
+
+                    else
+                        getGridXY li row (List.append acc [ { d | dayIndex = xPos, weekIndex = row } ])
 
                 [] ->
                     acc
     in
-        getGridXY dates 1 []
+    getGridXY dates 1 []
 
 
 updateContent : CalendarModel a -> CalendarModel a
@@ -597,7 +614,7 @@ updateContent model =
                 )
                 listOfMonths
     in
-        { model | months = Dict.fromList newListOfMonths }
+    { model | months = Dict.fromList newListOfMonths }
 
 
 updateInternalMonthGrid : InternalMonth a -> InternalMonth a
@@ -609,7 +626,7 @@ updateInternalMonthGrid month =
         newDays =
             Dict.fromList <| List.map (\x -> ( TDate.toTuple x.theDate, x )) <| getMonthGridFromDates days
     in
-        { month | days = newDays }
+    { month | days = newDays }
 
 
 subHeaders : List (Html (CalendarMsg a))
@@ -618,7 +635,7 @@ subHeaders =
         list =
             [ Mon, Tue, Wed, Thu, Fri, Sat, Sun ]
     in
-        List.map (\x -> div [ class "calendar-weekday-header", subHeader, gridAccess 1 (dayToGridxPosition x) ] [ text <| dayToString x ]) list
+    List.map (\x -> div [ class "calendar-weekday-header", subHeader, gridAccess 1 (dayToGridxPosition x) ] [ text <| dayToString x ]) list
 
 
 dayToGridxPosition : Weekday -> Int
@@ -806,6 +823,7 @@ daysInMonth year month =
         2 ->
             if isLeapYear year then
                 29
+
             else
                 28
 
